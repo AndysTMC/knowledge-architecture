@@ -4,7 +4,10 @@
 
 - Lint: `python3 scripts/lint_knowledge.py --strict`
 - Lint JSON (CI): `python3 scripts/lint_knowledge.py --strict --format json`
+- Version / pin: `python3 scripts/lint_knowledge.py --version --format json`
 - Refresh `docs/now.md` date: `python3 scripts/lint_knowledge.py --fix`
+- Scaffold Tier 1 elsewhere: `python3 scripts/lint_knowledge.py --init --test "…"`
+- Promotion hook: `python3 scripts/lint_knowledge.py --promotion-base <sha>`
 - Linter tests: `python3 -m unittest tests.test_lint_knowledge`
 
 There is no install or app server. This repository is a specification.
@@ -24,6 +27,14 @@ There is no install or app server. This repository is a specification.
 - Level 1 (draft) and Level 3 (generated): see [docs/kernel.md](docs/kernel.md) § Authority
 - Level 2 (constraints): accepted files in `docs/decisions/`
 - Level 4 (do not edit unless asked): this file, `docs/identity.md`, `docs/kernel.md` (kernel wording is constitutional), `LICENSE`
+
+## Write permissions
+
+- `PLAN.md`: write.
+- Proposed decisions: create; leave `proposed`.
+- Accepted decisions, architecture, `docs/now.md`, this file, identity, kernel, license: propose a patch. Do not apply silently.
+- `Status: proposed` → `accepted`: a named human only. On a PR, add the `human-accepted` label.
+- Do not delete an accepted or superseded decision; supersede it. On a PR, add the `human-removed` label. The promotion hook enforces both (`--allow-promotion` / `--allow-deletion`).
 
 ## Where to read
 

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   lint:
@@ -17,3 +18,28 @@ jobs:
         run: python3 -m unittest tests.test_lint_knowledge
       - name: Lint knowledge files
         run: python3 scripts/lint_knowledge.py --strict
+
+  promotion:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Block ungated promotions and protected deletions
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          ALLOW_PROMO: ${{ contains(github.event.pull_request.labels.*.name, 'human-accepted') }}
+          ALLOW_DEL: ${{ contains(github.event.pull_request.labels.*.name, 'human-removed') }}
+        run: |
+          extra=()
+          if [ "$ALLOW_PROMO" = "true" ]; then
+            extra+=(--allow-promotion)
+          fi
+          if [ "$ALLOW_DEL" = "true" ]; then
+            extra+=(--allow-deletion)
+          fi
+          python3 scripts/lint_knowledge.py --promotion-base "$BASE" --format json "${extra[@]}"

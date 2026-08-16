@@ -1,6 +1,6 @@
 # A Knowledge Architecture for Humans and Agents
 
-**Version:** 0.1.0  
+**Version:** 0.1.1  
 **Updated:** 2026-08-17  
 **Tool table review-by:** 2026-11-17 (§18 ages; treat it as stale after that date until revised)
 
@@ -28,6 +28,7 @@ Start with [docs/kernel.md](kernel.md) if you have not read this before. This fi
 - [17. Implementation contract](#17-implementation-contract)
 - [18. Tool compatibility](#18-tool-compatibility)
 - [19. Edges](#19-edges)
+- [20. Sources](#20-sources)
 
 **One sentence.** Keep protocol, identity, evidence, belief, decision, attention, and history in different homes — then grow a file only when a real instance of that kind appears.
 
@@ -45,7 +46,7 @@ The conversation you collected smashed three different systems into one folder t
 | **Cognition** | What this is, what we believe, what we decided, what we are doing | Humans, or agents under review | Becomes a wiki that cannot tell a decision from a hunch |
 | **Compilation** | A compounding, interlinked picture of *sources* | Agents write. Humans curate sources and review | Becomes a software docs tree, or a self-citing hallucination |
 
-Karpathy’s LLM Wiki (April 2026) is **compilation**. `AGENTS.md` (Linux Foundation / Agentic AI Foundation, Dec 2025) is **protocol**. ADRs and a current-attention file are **cognition**. A file named `index.md` does not make a coding agent smarter. A Zettelkasten does not tell Codex how to run tests. A 200-line `AGENTS.md` does not remember why you rejected Kafka.
+Karpathy’s LLM Wiki (April 2026) is **compilation** ([S1](#20-sources)). `AGENTS.md` (Linux Foundation / Agentic AI Foundation, Dec 2025) is **protocol** ([S2](#20-sources)). ADRs and a current-attention file are **cognition**. A file named `index.md` does not make a coding agent smarter. A Zettelkasten does not tell Codex how to run tests. A 200-line `AGENTS.md` does not remember why you rejected Kafka.
 
 A future-proof architecture keeps the three systems distinct, then lets a project activate only the rings it has earned.
 
@@ -96,21 +97,21 @@ A future-proof architecture keeps the three systems distinct, then lets a projec
 
 **From the 2026 tool reality**
 
-- `AGENTS.md` is the portable standard (60k+ repos; nested files; nearest wins).
-- Claude Code still reads `CLAUDE.md`, not `AGENTS.md`. Official pattern: first line `@AGENTS.md`, or a symlink. On Windows, use the import.
-- Claude Code auto-memory is **machine-local** and is not the team knowledge base. Do not confuse `~/.claude/projects/.../memory/MEMORY.md` with the repo.
+- `AGENTS.md` is the portable standard (60k+ repos; nested files; nearest wins) ([S3](#20-sources)).
+- Claude Code still reads `CLAUDE.md`, not `AGENTS.md`. Official pattern: first line `@AGENTS.md`, or a symlink. On Windows, use the import ([S5](#20-sources)).
+- Claude Code auto-memory is **machine-local** and is not the team knowledge base. Do not confuse `MEMORY.md` under the local Claude project directory with the repo ([S6](#20-sources)).
 - Skills load on demand. Path-scoped rules load when matching files are touched. Both exist so the root protocol can stay small.
-- Content duplicated from the README into `AGENTS.md` measurably hurts agent performance. Route; do not copy.
+- Repository overviews and README clones in `AGENTS.md` do not help task success and raise cost. Keep the hub to commands, don’ts, and landmines an agent cannot discover by reading the tree. Route; do not copy ([S4](#20-sources)).
 
 ---
 
 ## 2. Weak assumptions to drop
 
+The anti-file list is §14 only. This table is the *beliefs* that produce those files.
+
 | Assumption | Why it is wrong |
 |---|---|
 | “A comprehensive project needs all of these `.md` files.” | Comprehensive *coverage of kinds* is not a maximal file list. Unused files rot and become false authority. |
-| `hot-cache.md` makes agents faster. | Models have no special fast path for a file with that name. Recent truth belongs in the attention file or the wiki index. |
-| A hand-maintained `FILES.md` stops hallucinated paths. | It becomes stale, then *causes* hallucinations. Put a 8–12 row routing table in `AGENTS.md`, or generate a map from the tree. Nested `AGENTS.md` in a monorepo often replaces it. |
 | `LOG.md` is always essential. | For code, git + PRs + ADRs + a curated changelog already are history. A parallel tape either duplicates them or drifts. A tape *is* essential for wiki ingest and for belief changes that are not commits. |
 | One `ARCHITECTURE.md` blob is always a sin. | One file until it cannot be read in a sitting. Split by view or subsystem only then. Premature decomposition is how teams lose the plot. |
 | `SCHEMA.md` should list every field. | Generated artifacts (migrations, Prisma, OpenAPI, protobufs, Zod) are the schema. Prose explains *why*, and points. Hand-transcribed fields drift. |
@@ -119,7 +120,6 @@ A future-proof architecture keeps the three systems distinct, then lets a projec
 | IDs like `K014` are required on day one. | They pay off when notes outgrow memory. Until then they are ceremony. Adopt IDs at the compounding stage, not the spark. |
 | Agents should treat every Markdown file as true. | Capture, scratch, chat, and unreviewed wiki pages are not authority. Without an authority model the architecture is a suggestion. |
 | The Karpathy wiki belongs in every software repo. | It belongs when you are accumulating *sources* you want compiled. A CRUD app does not need `raw/` and entity pages. |
-| `SCRATCHPAD.md` + `PLAN.md` + `NOW.md` + `TODO.md` + `BACKLOG.md` | That is five working memories. Pick two: session plan (ephemeral) and project attention (committed). |
 | “Never guess, always `ls -R` first is waste, so never explore.” | Agents still need to read code. The rule is: do not *speculate about contracts*. Do explore the files the routing table named. |
 
 ---
@@ -201,7 +201,7 @@ Almost every documentation failure is two kinds stuffed into one file.
 
 ### 5.3 Authority levels
 
-Treat this table as law. Put a short version in `AGENTS.md`.
+Treat this table as law. Put a short version in `AGENTS.md`, plus the write-permission table in §6.1. How a draft becomes reviewed is §19.1 only.
 
 | Level | Meaning | Examples | Agents may… |
 |---|---|---|---|
@@ -383,14 +383,11 @@ Every accepted decision lists **assumptions** that would force a revisit. That i
               archive/
 ```
 
-**Promotion rules**
+**What moves along this diagram.** Authority is §5.3. The 1→2 bar is §19.1 (and only there). Flow-specific rules that are not in those sections:
 
-1. Nothing in `capture/` or `PLAN.md` is citable.
-2. A source note restates the source. A belief note states *our* claim and links the source.
-3. A compiled wiki page that is not yet reviewed is Level 1. It cannot be used as a source for another page.
-4. A choice discussed in a work note or a proposal becomes a decision file when someone would be wrong to ignore it.
-5. When a belief reverses, edit the belief, date the flip, add a history line, and check every decision whose assumptions cite it.
-6. User-facing docs (`out/`, Diátaxis, papers, briefs) are compiled from reviewed beliefs and decisions. If they disagree with a reviewed belief, the belief is updated first or the publication is wrong.
+- A source note restates the source. A belief note states *our* claim and links the source.
+- When a belief reverses, edit the belief, date the flip, add a history line, and check every decision whose assumptions cite it.
+- User-facing docs (`out/`, Diátaxis, papers, briefs) are compiled from reviewed beliefs. If they disagree with a reviewed belief, the belief is updated first or the publication is wrong.
 
 **Proposal pipeline (from Nexus, kept)**
 
@@ -416,12 +413,13 @@ A proposal is not a work package. A work package is committed execution. If you 
 
 **Mechanical checks**
 
-Run `python3 scripts/lint_knowledge.py --strict` in this repository (or copy the script). Tests: `python3 -m unittest tests.test_lint_knowledge`. It fails on anti-files (including nested copies), empty decision/wiki/skill rings, duplicate decision IDs (`# NNNN. ` titles, not bare years), accepted ADRs without Assumptions, oversized `AGENTS.md`, fat pointer files that forgot `AGENTS.md`, dual `CLAUDE.md` paths, broken relative Markdown links, undecodable `.md` files, and — under `--strict` — a stale `docs/now.md`. `--fix` refreshes that date. `--format json` is for CI. Kind-mixing that has no `type:` frontmatter is still a human review item — the linter cannot classify untyped prose.
+Run `python3 scripts/lint_knowledge.py --strict` (or the copy `--init` wrote). Tests: `python3 -m unittest tests.test_lint_knowledge`. `--version` prints the embedded version; a vendored copy is stale when that string does not match the pin you intended. Re-vendor with `curl -fsSL -o scripts/lint_knowledge.py` from the tag URL in `--version` JSON (`pin`), then run `--version` again. There is no auto-update.
 
-When you add more CI of your own:
+The script fails on anti-files, empty rings, duplicate decision IDs, accepted ADRs without Assumptions, one-way supersede links, `_index.md` rows that disagree with a file on status / date / supersedes, missing `type:` on conventional paths, wiki pages without a source pointer, fat pointers, dual `CLAUDE.md`, broken relative links and missing `#anchors`, and — under `--strict` — a stale `docs/now.md`. `--init` writes Tier 1 only.
 
-- Fail if `docs/schema.md` names a field that does not exist in the generated schema (when you have one).
-- For a wiki ring: lint orphans, pages without source pointers, and pages that cite other unreviewed pages as evidence.
+**Promotion hook (CI, not the tree linter).** `python3 scripts/lint_knowledge.py --promotion-base <sha>` fails if the diff lands a decision at `Status: accepted` (a flip, or a new file), **or** if it deletes / moves out of the ring a decision whose last seen status is `accepted` or `superseded` (or whose status is not in the hunk — treated as protected). The match is case-insensitive and allows space before the colon. On GitHub: `human-accepted` + `--allow-promotion` for a promotion; `human-removed` + `--allow-deletion` for a removal. Do not stretch one label over both. The labels are human claims, not proof of thought. The job runs only on `pull_request`; a direct push to `main` is not this hook, and is not branch protection. Kind-mixing inside a typed file, and a belief flip with no `docs/log.md` line, stay human review. Do not claim the script reads those.
+
+When you add more CI of your own: fail if `docs/schema.md` names a field the generated schema does not have.
 
 **Conflict protocol**
 
@@ -469,13 +467,13 @@ Every session:
 2. Read `docs/now.md` if it exists (project attention).
 3. Read `docs/identity.md` only when the task can change scope or meaning.
 4. Treat accepted decisions as constraints. Treat `docs/architecture.md` as current shape.
-5. Treat `docs/capture/`, `PLAN.md`, unreviewed wiki pages, and chat as Level 0–1.
+5. Treat `docs/capture/`, `PLAN.md`, unreviewed wiki pages, and chat as Level 0–1 (§5.3). Do not flip a draft to accepted (§19.1).
 6. Prefer generated artifacts over prose when they disagree.
 7. For any task that will touch more than two files, write `PLAN.md` before editing.
 8. Run the targeted test (or equivalent check) before declaring done.
 9. Do not add dependencies, edit generated code, or rewrite accepted decisions unless the human asked.
-10. Do not commit secrets, credentials, `.env` values, or personal data into any knowledge file (`AGENTS.md`, capture, wiki, `PLAN.md`, decisions included).
-11. After non-trivial work, *propose*: a history line, a `docs/now.md` patch, a decision draft if a choice was made, a wiki update if a source or belief changed. Do not silently edit constitutional files.
+10. Do not commit secrets, credentials, `.env` values, or personal data into any knowledge file.
+11. After non-trivial work, *propose* patches. Do not silently edit Level 2–4 files.
 
 **Monorepos.** Nested `AGENTS.md` files are valid. The nearest file to the edited path wins. The root file holds repo-wide commands and the matrix. Package files hold local commands and don’ts. Do not copy the matrix into every package.
 
@@ -606,6 +604,13 @@ Delete any "Where to read" row whose target does not exist yet.
 - Level 3 (prefer over prose): generated schemas and types
 - Level 4 (do not edit unless asked): this file, `docs/identity.md`, `LICENSE`
 
+## Write permissions
+- Capture / `PLAN.md`: write.
+- Proposed decisions: create; leave `proposed`.
+- Accepted decisions, architecture, `docs/now.md`: propose a patch.
+- `Status: proposed` → `accepted`: a named human only (PR label `human-accepted`).
+- Do not delete an accepted or superseded decision (PR label `human-removed`).
+
 ## Where to read
 | Need | File |
 |---|---|
@@ -631,6 +636,7 @@ Propose, do not silently apply: a docs/now.md patch, a decision draft if you cho
 
 ```markdown
 ---
+type: now
 updated: YYYY-MM-DD
 horizon: YYYY-MM-DD → YYYY-MM-DD
 ---
@@ -662,15 +668,24 @@ This architecture lasts because it is **typed information + authority + a tiny k
 
 It is compatible with git, with Claude Code, with Codex, with a lab drive, with a single author, and with fifty. It lets `AGENTS.md` do what it is good at (protocol), ADRs do what they are good at (commitment), Diátaxis do what it is good at (teaching outsiders), and Karpathy’s wiki do what it is good at (compiling sources). It refuses to let any of them pretend to be the others.
 
-The structure is not the directory tree. **The structure is the refusal to mix the seven kinds, the refusal to treat unverified text as true, and the refusal to create a file before it has an inhabitant.**
-
-Start with `README.md`. Add `AGENTS.md` when an agent arrives. Grow the first ring the day you need it — not the day a blog post lists it.
+The structure is not the directory tree. **The structure is the refusal to mix the seven kinds, the refusal to treat unverified text as true, and the refusal to create a file before it has an inhabitant.** Anti-files: §14.
 
 ---
 
 ## 17. Implementation contract
 
 This section is the algorithm for applying the architecture to an existing repository. It does not add roles.
+
+**Greenfield Tier 1 (skip the theory).** If the repo has no agent files yet and you only want the kernel:
+
+```bash
+# From a clone of this repo (works on this tree; no tag required)
+python3 /path/to/knowledge-architecture/scripts/lint_knowledge.py --init --root . --install "…" --test "…"
+python3 scripts/lint_knowledge.py --version
+python3 scripts/lint_knowledge.py --strict
+```
+
+`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. After `v0.1.1` is tagged you may curl `PIN_URL` from `--version` JSON instead of using a clone. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
 
 1. **Inspect first.** Inventory existing docs, agent files, package manifests, CI, issue tracker, and whether the project is software, research, mixed, or something else. Do not invent a parallel tree beside files that already play a role.
 2. **Map, then create.** If `PROJECT.md`, `ARCHITECTURE.md`, `adr/`, `docs/adr/`, `DESIGN.md`, or similar already exist, keep them and treat them as the role they already play. Point `AGENTS.md` at those paths. Do not copy their contents into new files with the default names.
@@ -800,7 +815,7 @@ A draft becomes reviewed only when **all** of these hold:
 4. For a decision: Context, Options, Decision, Assumptions (falsifiable), Consequences are present.
 5. For a wiki page: it does not treat another Level 1 page as a source.
 
-Agents may open the PR or edit the draft. They may **not** flip the status field to accepted. Self-promotion is a Level 0 action pretending to be Level 2.
+Agents may open the PR or edit the draft. They may **not** flip the status field to accepted, and they may **not** delete an accepted or superseded decision (supersede it). Self-promotion is a Level 0 action pretending to be Level 2. On GitHub, a PR that lands `Status: accepted` needs `human-accepted`; a PR that removes a protected decision needs `human-removed`. `lint_knowledge.py --promotion-base` enforces both. The labels are human claims, not a substitute for the five bullets above.
 
 ### 19.2 Ownership handoff
 
@@ -837,3 +852,21 @@ Diagrams, notebooks, spreadsheets, slides, and binaries are not first-class kind
 | Tool table review-by | title block | 90 days or the next loader surprise, whichever first |
 
 Shipped versions of this spec live on git tags (`v0.1.0`, …). **Published tags are never moved.** Once outsiders pin `.../v0.1.0/docs/...`, that tree is frozen; later work is `v0.1.1+`. Do not rewrite `main` in a way that requires moving those tags. The implement prompt must keep working against a pinned tag.
+
+---
+
+## 20. Sources
+
+Empirical claims in §1 and §18. Retrieved 2026-08-17. The architecture’s own evidence rule applies here: a claim without a pointer is a vibe.
+
+| ID | Claim in this spec | Source |
+|---|---|---|
+| **S1** | Karpathy’s LLM Wiki, April 2026 | [gist `llm-wiki.md`](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (created 2026-04-04). Earlier public note: [X, 2026-04-02](https://x.com/karpathy/status/2039805659525644595). |
+| **S2** | `AGENTS.md` donated to the Linux Foundation / Agentic AI Foundation, December 2025 | [Linux Foundation press release, 2025-12-09](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation); [OpenAI, same day](https://openai.com/index/agentic-ai-foundation/); steward home [aaif.io](https://aaif.io/). |
+| **S3** | `AGENTS.md` used in 60k+ repositories; nested files, nearest wins | [agents.md](https://agents.md/) (“used by over 60k open-source projects”; [GitHub code search](https://github.com/search?q=path%3AAGENTS.md+NOT+is%3Afork+NOT+is%3Aarchived&type=code)). Nearest-wins is in the same page’s FAQ. |
+| **S4** | README clones / repository overviews in `AGENTS.md` do not help, and context files raise cost | Gloaguen, Mündler, Müller, Raychev, Vechev, *Evaluating AGENTS.md*, [arXiv:2602.11988](https://arxiv.org/abs/2602.11988) (v2, 2026-06-23): context files do not generally improve task success and increase inference cost by over 20%; “repository overviews, although popular … are not helpful.” The spec does **not** claim a measured drop from any one duplicated paragraph — it claims the failure mode the paper measured. |
+| **S5** | Claude Code reads `CLAUDE.md`, not `AGENTS.md`; official bridge is `@AGENTS.md` (or a symlink; import on Windows) | [Claude Code memory docs](https://code.claude.com/docs/en/memory) (section “AGENTS.md”). |
+| **S6** | Claude auto-memory is machine-local, not the team knowledge base | Same [memory docs](https://code.claude.com/docs/en/memory): auto-memory writes `MEMORY.md` in the local Claude project directory. |
+| **S7** | Keep the always-on protocol file short (~200 lines) | [Claude Code features overview](https://code.claude.com/docs/en/features-overview): “Keep CLAUDE.md under 200 lines.” This spec applies the same budget to `AGENTS.md`, the file that actually loads in portable setups. |
+
+§18’s tool table is a dated survey (see **Tool table review-by**), not a second evidence appendix. When a loader fact in that table changes, update the table and this section in the same edit.

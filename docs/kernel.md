@@ -1,6 +1,6 @@
 # Kernel
 
-**Version:** 0.1.0 · Full spec: [knowledge-architecture.md](knowledge-architecture.md)
+**Version:** 0.1.1 · Full spec: [knowledge-architecture.md](knowledge-architecture.md)
 
 Keep **protocol**, **identity**, **evidence**, **belief**, **decision**, **attention**, and **history** in different homes. Create a file only when it has a real inhabitant.
 
@@ -46,4 +46,6 @@ Decisions, architecture, schema-intent, skills, wiki, capture, changelog, contri
 Read `AGENTS.md` → `docs/now.md` if it exists → accepted decisions as constraints → generated artifacts over prose → targeted test before done → **propose** doc patches; do not silently edit Level 2–4.
 
 Lint: `python3 scripts/lint_knowledge.py --strict`  
+Init (Tier 1 only): `python3 scripts/lint_knowledge.py --init --test "…"`  
+Version / re-vendor pin: `python3 scripts/lint_knowledge.py --version`  
 Tests: `python3 -m unittest tests.test_lint_knowledge`

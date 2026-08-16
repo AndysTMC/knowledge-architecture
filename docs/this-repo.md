@@ -12,7 +12,7 @@ This repo is a **specification**, not a product app. It uses the architecture on
 |---|---|---|
 | `README.md` | Identity (door) | Human on-ramp |
 | `docs/kernel.md` | Protocol (short) | One-page spec |
-| `docs/knowledge-architecture.md` | Belief (full spec) | On-demand ring |
+| `docs/knowledge-architecture.md` | Belief (full spec) + §20 evidence | On-demand ring; citations for the spec’s own claims |
 | `AGENTS.md` | Protocol | How agents work here |
 | `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md` | Protocol pointers | Compatibility pack |
 | `docs/identity.md` | Identity | Constitution |
@@ -23,7 +23,7 @@ This repo is a **specification**, not a product app. It uses the architecture on
 | `model-activity/` | *This project only* | Handoff notes for the next model. Not a ring of the architecture. |
 | `CHANGELOG.md` | History (release) | User-facing versions |
 | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `ADOPTERS.md` | Interfaces | Public project |
-| `scripts/lint_knowledge.py` | Tool | Mechanical checks |
+| `scripts/lint_knowledge.py` | Tool | Tree lint, `--init`, `--version`, promotion hook |
 | `tests/` | Tool tests | Fixture repos and unit tests for the linter |
 
 **Not here (birth rule):** `docs/wiki/`, `docs/schema.md`, `docs/skills/`, `FILES.md`, `hot-cache.md`, `TODO.md`.

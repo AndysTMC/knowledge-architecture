@@ -21,6 +21,18 @@ If those fetches fail, follow this prompt alone.
 
 Prefer **pinned** URLs (`.../v0.1.0/docs/...` on `raw.githubusercontent.com`) when the human asked for a vendor/offline copy. Do not fetch from `main` if they pinned a tag.
 
+## Fast path (greenfield Tier 1 only)
+
+If the target has **no** `AGENTS.md` / `CLAUDE.md` yet and the human only wants the kernel, do **not** absorb the full spec. Copy `scripts/lint_knowledge.py` from a clone of the spec repo (do not curl a tag that may not exist) and run:
+
+```bash
+python3 lint_knowledge.py --init --install "<real>" --test "<real>"
+python3 lint_knowledge.py --version
+python3 lint_knowledge.py --strict
+```
+
+Then stop and report. `--init` must not create `docs/decisions/`, `docs/wiki/`, or `docs/now.md`. If the repo already has docs or agent files, ignore this path and do Phase 1.
+
 ## Phases (do not skip Phase 1)
 
 **Phase 1 — inspect only.** Produce the implementation report (mapping, would-create, would-defer, conflicts). Do **not** write files. Stop and wait.

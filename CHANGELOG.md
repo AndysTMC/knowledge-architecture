@@ -2,6 +2,16 @@
 
 All notable changes to this specification are recorded here. Spec versions are git tags.
 
+## Unreleased — 0.1.1
+
+- Sources appendix (§20). The “duplicated README hurts” line matches Gloaguen et al., not a vibe.
+- Linter: `type:` by path, bidirectional supersedes, `_index.md` status/date/supersedes, wiki source pointers, `#anchors`, CommonMark fences, `--init`, `--version` / `PIN_URL`.
+- Promotion hook: `--promotion-base` fails a diff that lands `Status: accepted` (`human-accepted` / `--allow-promotion`) or that deletes / moves out an accepted or superseded decision (`human-removed` / `--allow-deletion`). One label does not cover the other. Case, `Status :`, rename+flip, and hunk-less moves out of the ring are gated. A decision with no parseable `Status:` is an error. The hook is pull-request only.
+- README fast path no longer curls a tag that does not exist. Re-vendor procedure is documented. No PyPI/uvx entry point in this patch.
+- Spec: §2 points at §14 for anti-files; 1→2 bar lives in §19.1 only. `AGENTS.md` has write permissions.
+- Still human review: kind-mixing inside a typed file, belief flips without a log line.
+- Still no third-party adopter and no product-repo month. Those are not spec gaps.
+
 ## 0.1.0 — 2026-08-17
 
 - First tagged release of the knowledge architecture.

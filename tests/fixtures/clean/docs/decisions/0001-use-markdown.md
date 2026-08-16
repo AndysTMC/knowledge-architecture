@@ -1,3 +1,8 @@
+---
+type: decision
+status: accepted
+---
+
 # 0001. Use Markdown
 
 Status: accepted

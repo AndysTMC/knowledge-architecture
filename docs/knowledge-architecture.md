@@ -679,13 +679,14 @@ This section is the algorithm for applying the architecture to an existing repos
 **Greenfield Tier 1 (skip the theory).** If the repo has no agent files yet and you only want the kernel:
 
 ```bash
-# From a clone of this repo (works on this tree; no tag required)
-python3 /path/to/knowledge-architecture/scripts/lint_knowledge.py --init --root . --install "…" --test "…"
+curl -fsSL -o lint_knowledge.py \
+  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.1/scripts/lint_knowledge.py
+python3 lint_knowledge.py --init --install "…" --test "…"
 python3 scripts/lint_knowledge.py --version
 python3 scripts/lint_knowledge.py --strict
 ```
 
-`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. After `v0.1.1` is tagged you may curl `PIN_URL` from `--version` JSON instead of using a clone. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
+`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. The `v0.1.1` pin in `--version` JSON is live. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
 
 1. **Inspect first.** Inventory existing docs, agent files, package manifests, CI, issue tracker, and whether the project is software, research, mixed, or something else. Do not invent a parallel tree beside files that already play a role.
 2. **Map, then create.** If `PROJECT.md`, `ARCHITECTURE.md`, `adr/`, `docs/adr/`, `DESIGN.md`, or similar already exist, keep them and treat them as the role they already play. Point `AGENTS.md` at those paths. Do not copy their contents into new files with the default names.

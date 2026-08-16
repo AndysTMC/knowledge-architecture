@@ -23,7 +23,7 @@ Prefer **pinned** URLs (`.../v0.1.0/docs/...` on `raw.githubusercontent.com`) wh
 
 ## Fast path (greenfield Tier 1 only)
 
-If the target has **no** `AGENTS.md` / `CLAUDE.md` yet and the human only wants the kernel, do **not** absorb the full spec. Copy `scripts/lint_knowledge.py` from a clone of the spec repo (do not curl a tag that may not exist) and run:
+If the target has **no** `AGENTS.md` / `CLAUDE.md` yet and the human only wants the kernel, do **not** absorb the full spec. Fetch the linter from the `v0.1.1` pin (or copy it from a clone) and run:
 
 ```bash
 python3 lint_knowledge.py --init --install "<real>" --test "<real>"

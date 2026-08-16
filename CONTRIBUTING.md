@@ -22,9 +22,8 @@ Accepted decisions are not rewritten in place. Supersede them with a new numbere
 
 ## Tags and history
 
-**Published tags are never moved.** `v0.1.0` is frozen. Strangers’ agents pin `raw.githubusercontent.com/.../v0.1.0/docs/...`. A moved tag silently changes what they fetch.
+**Published tags are never moved.** `v0.1.0` and `v0.1.1` are frozen. Strangers’ agents pin `raw.githubusercontent.com/.../v0.1.1/scripts/lint_knowledge.py` (and older pins to `v0.1.0` docs). A moved tag silently changes what they fetch.
 
-- Ship fixes as `v0.1.1` or later. Do not `git tag -f` and do not force-push a tag that already exists on GitHub.
+- Ship later fixes as `v0.1.2` or later. Do not `git tag -f` and do not force-push a tag that already exists on GitHub.
 - Do not rewrite `main` history once a tag that outsiders pin has been published.
 - README apply blocks that pin a version should keep pinning that frozen tag until you intentionally bump the pin in a new release.
-- After tagging `v0.1.1`, confirm `PIN_URL` inside `scripts/lint_knowledge.py` resolves (the fast-path clone instructions work without that tag).

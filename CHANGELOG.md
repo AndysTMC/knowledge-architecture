@@ -2,7 +2,11 @@
 
 All notable changes to this specification are recorded here. Spec versions are git tags.
 
-## Unreleased — 0.1.1
+## Unreleased
+
+- Dated the 0.1.1 heading and dropped “unreleased” now that the tag exists. The `v0.1.1` tree itself still says “Unreleased”; that tag is not moved.
+
+## 0.1.1 — 2026-08-17
 
 - Sources appendix (§20). The “duplicated README hurts” line matches Gloaguen et al., not a vibe.
 - Linter: `type:` by path, bidirectional supersedes, `_index.md` status/date/supersedes, wiki source pointers, `#anchors`, CommonMark fences, `--init`, `--version` / `PIN_URL`.

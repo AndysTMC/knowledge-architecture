@@ -1,8 +1,8 @@
 # Knowledge Architecture
 
-**v0.1.1** (unreleased) — a typed system for project knowledge that humans and coding agents share.
+**v0.1.1** — a typed system for project knowledge that humans and coding agents share.
 
-`v0.1.0` is frozen. This tree is the next patch. Do not move the old tag.
+Published tags (`v0.1.0`, `v0.1.1`) are never moved.
 
 Start here: **[docs/kernel.md](docs/kernel.md)** (one page).  
 Full spec: [docs/knowledge-architecture.md](docs/knowledge-architecture.md).  
@@ -16,17 +16,15 @@ This repository **uses the architecture on itself**. See [docs/this-repo.md](doc
 
 ## Fast Tier 1
 
-Works on this tree. No tag required:
-
 ```bash
-python3 /path/to/knowledge-architecture/scripts/lint_knowledge.py --init --root . --install "pip install -e ." --test "pytest"
-python3 scripts/lint_knowledge.py --version
-python3 scripts/lint_knowledge.py --strict
+curl -fsSL -o lint_knowledge.py \
+  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.1/scripts/lint_knowledge.py
+python3 lint_knowledge.py --init --install "pip install -e ." --test "pytest"
+python3 lint_knowledge.py --version
+python3 lint_knowledge.py --strict
 ```
 
-`--init` will not invent `docs/` or empty decision folders. Existing messy repos still need the inspect flow below.
-
-After `v0.1.1` is tagged, you may fetch the script from the `pin` URL that `--version --format json` prints, instead of using a clone.
+`--init` will not invent `docs/` or empty decision folders. Existing messy repos still need the inspect flow below. From a clone, run `scripts/lint_knowledge.py` in place of the curl.
 
 ## Upgrade a vendored linter
 

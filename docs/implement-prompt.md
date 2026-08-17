@@ -217,13 +217,19 @@ Refer to [AGENTS.md](../AGENTS.md) for all repository agent instructions. That f
 
 Create at most what the inspect step justified.
 
-**docs/identity.md** — Intent, problem, scope, non-goals, success, constraints, principles, ownership. Write from what the repo and README already imply. Do not invent a vision.
+**docs/identity.md** — Intent, problem, scope, non-goals, success, constraints, principles, ownership. Write from what the repo and README already imply. Do not invent a vision. First lines:
 
-**docs/now.md** — Dated. 1–3 focus items, next actions, blocked, do-not-do. Link the tracker. Do not clone the board. If the tracker is sufficient and there is no extra intent, skip this file.
+```markdown
+---
+type: identity
+---
+```
 
-**docs/architecture.md** — Current shape: boundaries, data flow, invariants. Headings, not a novella. If `ARCHITECTURE.md` or similar already exists, keep it and route to it.
+**docs/now.md** — Dated. 1–3 focus items, next actions, blocked, do-not-do. Link the tracker. Do not clone the board. If the tracker is sufficient and there is no extra intent, skip this file. Frontmatter must include `type: now`.
 
-**docs/schema.md** — Only if a data model exists and its *intent* is not obvious from generated artifacts. Point at those artifacts. Do not list every field.
+**docs/architecture.md** — Current shape: boundaries, data flow, invariants. Headings, not a novella. If `ARCHITECTURE.md` or similar already exists, keep it and route to it. New file: `type: belief`.
+
+**docs/schema.md** — Only if a data model exists and its *intent* is not obvious from generated artifacts. Point at those artifacts. Do not list every field. New file: `type: belief`.
 
 **docs/decisions/** — Only if you can write at least one real decision from repo evidence (stack choice, auth, storage, public API shape, etc.). Then create:
 
@@ -233,6 +239,10 @@ Create at most what the inspect step justified.
 Decision template (one choice per file; title is a choice, not a topic):
 
 ```markdown
+---
+type: decision
+---
+
 # 0001. <We will …>
 
 Status: accepted

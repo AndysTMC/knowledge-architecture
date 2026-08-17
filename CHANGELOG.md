@@ -4,6 +4,8 @@ All notable changes to this specification are recorded here. Spec versions are g
 
 ## Unreleased
 
+- Decision / identity / architecture / schema / now templates now include the `type:` frontmatter the linter requires (§11, §6.1, implement-prompt). Apply-by-the-book no longer produces a pile of `missing type:` errors. From issue #1.
+- `ADOPTERS.md`: TukitoZenx/patrn.ink-api and patrn.ink-ui, owner-approved listing. Display, not a completed messy month.
 - Dated the 0.1.1 heading and dropped “unreleased” now that the tag exists. The `v0.1.1` tree itself still says “Unreleased”; that tag is not moved.
 
 ## 0.1.1 — 2026-08-17

@@ -320,15 +320,15 @@ Do not create legacy `.cursorrules`, `.windsurfrules`, or `.clinerules` if `AGEN
 
 **`PLAN.md`** — Current loop only. Objective, steps, blockers. Overwrite next session. Not a diary.
 
-**`docs/now.md`** — Project attention: 1–3 outcomes, next actions, blocked, do-not-do, horizon dates. Link the issue tracker. Do not clone it.
+**`docs/now.md`** — Project attention: 1–3 outcomes, next actions, blocked, do-not-do, horizon dates. Link the issue tracker. Do not clone it. Frontmatter must include `type: now` (the linter requires it).
 
-**`docs/identity.md`** — Intent, problem, scope and non-goals, success, constraints, principles, ownership. Change slowly. Material edits earn a log line and often a decision.
+**`docs/identity.md`** — Intent, problem, scope and non-goals, success, constraints, principles, ownership. Change slowly. Material edits earn a log line and often a decision. Frontmatter: `type: identity`.
 
-**`docs/architecture.md`** — How it fits together *now*. Boundaries, data flow, invariants. Views (context / containers / components / runtime / threats) start as headings. They become separate files only when the parent cannot be read in a sitting.
+**`docs/architecture.md`** — How it fits together *now*. Boundaries, data flow, invariants. Views (context / containers / components / runtime / threats) start as headings. They become separate files only when the parent cannot be read in a sitting. Frontmatter: `type: belief`.
 
-**`docs/schema.md`** — Intent of the *product* data model. Links to the generated source of truth. Records constraints the generator cannot express. Not the wiki operator file.
+**`docs/schema.md`** — Intent of the *product* data model. Links to the generated source of truth. Records constraints the generator cannot express. Not the wiki operator file. Frontmatter: `type: belief`.
 
-**`docs/decisions/NNNN-slug.md`** — One choice per file. Title is a choice, not a topic (“Use Postgres for the system of record,” not “Database”). Status: `proposed` | `accepted` | `superseded by NNNN` | `deprecated`. Once accepted, do not invert it in place.
+**`docs/decisions/NNNN-slug.md`** — One choice per file. Title is a choice, not a topic (“Use Postgres for the system of record,” not “Database”). Status: `proposed` | `accepted` | `superseded by NNNN` | `deprecated`. Once accepted, do not invert it in place. Frontmatter: `type: decision`. The §11 template includes this line; do not copy a heading-only stub.
 
 Every accepted decision lists **assumptions** that would force a revisit. That is the join between compilation and cognition: new evidence is tested against assumptions, not against vibes.
 
@@ -484,6 +484,10 @@ Every session:
 ## 11. Decision record (the one template that matters)
 
 ```markdown
+---
+type: decision
+---
+
 # 0007. Use Postgres for the system of record
 
 Status: accepted

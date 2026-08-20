@@ -1,0 +1,64 @@
+{
+    "version": 1,
+    "name": "Knowledge Architecture",
+    "tagline": "A typed knowledge system that humans and coding agents share.",
+    "description": "A specification and a local Python linter for project knowledge. It keeps protocol, identity, evidence, belief, decision, attention, and history in different files, grows a path only when that kind has a real inhabitant, and treats unverified text as non-citable. The runnable surface is scripts/lint_knowledge.py: tree lint, Tier 1 init, a frozen version pin, and a pull-request promotion hook. There is no app server, datastore, or package registry.",
+    "year": "2026",
+    "tags": [
+        "knowledge architecture",
+        "agent protocol",
+        "documentation",
+        "specification",
+        "architecture decision records"
+    ],
+    "skills": [
+        "Python",
+        "GitHub Actions",
+        "Markdown",
+        "Git"
+    ],
+    "highlights": [
+        "Tagged releases v0.1.0 and v0.1.1; published tags are frozen and the linter pin is a raw GitHub URL.",
+        "62 unittest cases cover lint violations, CommonMark fences, heading anchors, --init, the JSON CLI contract, and promotion and deletion gates.",
+        "CI on Ubuntu runs the tests, strict tree lint, and a pull-request-only promotion job keyed to human-accepted and human-removed labels.",
+        "--init scaffolds AGENTS.md, tool pointers, and a vendored linter without creating empty docs rings.",
+        "This repository applies the architecture to itself and lints clean against it."
+    ],
+    "story": {
+        "why": "Teams were copying long Markdown lists for coding agents and then maintaining a second copy per tool, so protocol, beliefs, decisions, and scratch mixed and no agent could tell what was true.",
+        "problem": "Improvised AGENTS.md, CLAUDE.md, wikis, and TODO files create conflicting instructions, empty ceremony directories, and files that agents treat as facts.",
+        "challenges": [
+            "Major coding agents still load different filenames (Claude Code reads CLAUDE.md, Gemini CLI defaults to GEMINI.md, some Copilot surfaces still want copilot-instructions.md), so facts must live in one hub without forking — scripts/lint_knowledge.py pointer checks and docs/knowledge-architecture.md section 18.",
+            "Agents may draft decisions but must not self-promote them to accepted, and must not delete accepted or superseded records — scripts/lint_knowledge.py --promotion-base and .github/workflows/knowledge-lint.yml.",
+            "Adopters vendor the linter by copying a file; copies do not auto-update — VERSION and PIN_URL in scripts/lint_knowledge.py.",
+            "The promotion hook is pull-request only; a direct push to main is not this gate — the promotion job if condition in .github/workflows/knowledge-lint.yml.",
+            "Kind-mixing inside a typed file and a belief flip with no log line stay human review; the script does not claim to read those — CHANGELOG.md and docs/knowledge-architecture.md section 8."
+        ],
+        "designDecisions": [
+            "Canonical knowledge is Markdown in git, not a hosted wiki or vendor agent memory — docs/decisions/0001-markdown-in-git.md.",
+            "MIT for the whole repository (specification, prompts, and linter), not a dual CC-BY and MIT split — docs/decisions/0002-mit-license.md.",
+            "One protocol hub in AGENTS.md; CLAUDE.md, GEMINI.md, and .github/copilot-instructions.md are pointers, not second rulebooks — POINTER_MAX_LINES in scripts/lint_knowledge.py.",
+            "Birth rule: --init never creates empty docs/decisions, wiki, or now.md — init_kernel in scripts/lint_knowledge.py.",
+            "Published git tags are never moved; strangers pin raw.githubusercontent.com URLs — CONTRIBUTING.md and PIN_URL.",
+            "Promotion onto accepted and deletion of protected decisions are separate human labels; --allow-promotion does not permit protected deletions — .github/workflows/knowledge-lint.yml.",
+            "JSON CLI shape {ok, errors, warnings, fixed} is frozen for v0.1.x — scripts/lint_knowledge.py."
+        ]
+    },
+    "future": {
+        "next": "Do not cut v0.1.2 until a named release pass; the 2026-08-17 adopter listings are display, not proof the shape survived a messy month.",
+        "roadmap": [
+            "Re-check the section 18 tool table before 2026-11-17.",
+            "Fold friction from GitHub issue 1 when field notes arrive.",
+            "Hold the embedded VERSION at 0.1.1 until a real release pass."
+        ],
+        "upcomingFeatures": [
+            "A spec minor version after the tool-table review.",
+            "Spec and linter changes driven by adopter field notes."
+        ],
+        "ideas": [
+            "A PyPI or uvx entry point — explicitly deferred in CHANGELOG.md.",
+            "Local search if a wiki index no longer fits in one read — docs/knowledge-architecture.md section 12.",
+            "Mechanical lint for kind-mixing inside a typed file — left as human review."
+        ]
+    }
+}

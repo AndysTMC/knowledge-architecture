@@ -2,6 +2,10 @@
 
 All notable changes to this specification are recorded here. Spec versions are git tags.
 
+## Unreleased — 0.1.3.dev0
+
+- Start the next development cycle; the published linter pin remains v0.1.2.
+
 ## 0.1.2 — 2026-09-08
 
 - Fix downloaded-script root selection; preserve README under init `--force`; refuse unsafe init paths.

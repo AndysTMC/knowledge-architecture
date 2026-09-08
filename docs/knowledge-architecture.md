@@ -1,6 +1,6 @@
 # A Knowledge Architecture for Humans and Agents
 
-**Version:** 0.1.2
+**Version:** 0.1.3.dev0 (unreleased)
 **Updated:** 2026-09-08
 **Tool table review-by:** 2026-11-17 (§18 ages; treat it as stale after that date until revised)
 

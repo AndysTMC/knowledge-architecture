@@ -1,86 +1,87 @@
 # Knowledge Architecture
 
-**v0.1.1** — a typed system for project knowledge that humans and coding agents share.
+**0.1.2** — a typed system for project knowledge that humans and coding agents share. Published tags are immutable.
 
-Published tags (`v0.1.0`, `v0.1.1`) are never moved.
+Start with [docs/kernel.md](docs/kernel.md). The [full specification](docs/knowledge-architecture.md) defines the model; the [implementation prompt](docs/implement-prompt.md) applies it elsewhere.
 
-Start here: **[docs/kernel.md](docs/kernel.md)** (one page).  
-Full spec: [docs/knowledge-architecture.md](docs/knowledge-architecture.md).  
-Sources: [spec §20](docs/knowledge-architecture.md#20-sources).
+Keep protocol, cognition, and source compilation in separate homes. Create a file only when it has a real inhabitant. For a personal or solo repository, `README.md` + `AGENTS.md` may be enough.
 
-Protocol, cognition, and compilation stay in different homes. Files are created only when they have a real inhabitant.
+This repository [uses the architecture on itself](docs/this-repo.md).
 
-This repository **uses the architecture on itself**. See [docs/this-repo.md](docs/this-repo.md).
+## Requirements
 
-**Personal or solo repo?** `README.md` + `AGENTS.md` is enough.
+Python **3.10+**, standard library only. Git is needed for `--promotion-base`. There is no install step or app server.
 
 ## Fast Tier 1
 
+From the target repository, download the pinned release and supply the real test command:
+
 ```bash
-curl -fsSL -o lint_knowledge.py \
-  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.1/scripts/lint_knowledge.py
-python3 lint_knowledge.py --init --install "pip install -e ." --test "pytest"
-python3 lint_knowledge.py --version
-python3 lint_knowledge.py --strict
+curl -fsSL --create-dirs -o scripts/lint_knowledge.py \
+  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.2/scripts/lint_knowledge.py
+python3 scripts/lint_knowledge.py --root . --init --test "pytest"
+python3 scripts/lint_knowledge.py --strict
 ```
 
-`--init` will not invent `docs/` or empty decision folders. Existing messy repos still need the inspect flow below. From a clone, run `scripts/lint_knowledge.py` in place of the curl.
+Or use this checkout against an existing target directory:
 
-## Upgrade a vendored linter
+```bash
+python3 scripts/lint_knowledge.py --root /absolute/path/to/target --init --test "pytest"
+python3 /absolute/path/to/target/scripts/lint_knowledge.py --strict
+```
 
-`--init` copies the script. Copies do not auto-update.
+Init creates a missing README, an `AGENTS.md` hub, three tool pointers, and a vendored linter. It does not create empty `docs/` rings. Existing files are preserved; `--force` replaces protocol, pointers, and the linter but preserves README. `--no-compat` omits the pointers.
+
+Commands inferred from manifests are hints; review them before use. Existing repositories with documentation need the inspect/apply flow below.
+
+## Apply to an existing repository
+
+Give the agent the kernel, implementation prompt, and full specification **from the same checkout or immutable commit**:
+
+```text
+Apply the supplied Knowledge Architecture to the current target repository.
+Phase 1 only: inspect, map existing files, report proposed changes and conflicts,
+and stop without writing. Preserve existing role locations and local instructions.
+```
+
+After reviewing the report, authorize Phase 2. New decisions remain `proposed`; a named human accepts them.
+
+Use `v0.1.2` for the kernel, implementation prompt, full spec, and linter. Historical `v0.1.0` templates lack some frontmatter required by the `v0.1.1` linter. Do not combine those pins as a working adoption recipe. The `v0.1.2` artifact set includes the template fixes.
+
+## Vendored versions
 
 ```bash
 python3 scripts/lint_knowledge.py --version --format json
-curl -fsSL -o scripts/lint_knowledge.py \
-  "$(python3 scripts/lint_knowledge.py --version --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["pin"])')"
-python3 scripts/lint_knowledge.py --version
 ```
 
-Diff a local patch before replacing: `curl -fsSL "$PIN" | diff -u scripts/lint_knowledge.py -`.
+`version` identifies this script; `pin` points to the last **published** linter, currently `v0.1.2`. A development version can differ from that artifact. Downloading the installed copy's `pin` restores its published baseline; it does not discover an upgrade.
+
+To upgrade, choose a published release explicitly, inspect its changes, and vendor that release's script. Use the same release's adoption documents. Copies do not auto-update; version strings are not checksums. Published tags are never moved.
 
 ## Tiers
 
-| Tier | Time | What you get |
+| Tier | Add when | Contents |
 |---|---|---|
-| **1** | `--init` | `AGENTS.md` hub + three pointer files. No `docs/` folder. Most repos stop here. |
-| **2** | when work is ongoing | + `docs/now.md`, optional linter in CI |
-| **3** | first real decision | + `docs/decisions/` |
+| 1 | Agents work here | Human door, protocol hub, pointers |
+| 2 | Work needs shared attention | Dated `docs/now.md` |
+| 3 | First durable choice | Decisions and their index |
 
-## Apply to an existing repo (dry-run first)
-
-Open a Frontier AI session **in the target repository**. The agent must **inspect and stop** until you say apply. Prefer a branch, not `main`.
-
-The inspect/apply prompt stays pinned to the frozen tag so a stranger’s agent does not fetch a moving `main`:
-
-```text
-Apply the Knowledge Architecture from https://github.com/AndysTMC/knowledge-architecture
-Phase 1 only (inspect, do not write files).
-
-1. Fetch https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.0/docs/kernel.md
-2. Fetch https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.0/docs/implement-prompt.md
-3. Fetch https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.0/docs/knowledge-architecture.md
-4. Report the mapping, what you would create, what you would defer, and conflicts. Then stop.
-```
-
-After you approve: “Phase 2 — apply Tier 1 on branch `docs/architecture`.”
-
-Implement file only: https://github.com/AndysTMC/knowledge-architecture/blob/v0.1.0/docs/implement-prompt.md
-
-## Check a repo
+## Validate
 
 ```bash
-python3 scripts/lint_knowledge.py --strict
 python3 -m unittest tests.test_lint_knowledge
+python3 scripts/lint_knowledge.py --strict
+python3 scripts/lint_knowledge.py --promotion-base main --format json
 ```
 
-JSON (stable in v0.1.x): `{ "ok", "errors", "warnings", "fixed" }`.
+Tree lint and the decision gate are separate modes. JSON retains `{ "ok", "errors", "warnings", "fixed" }`. Strict lint includes clock checks; `--touch-now` (alias `--fix`) refreshes only a stale date, not the content.
 
-A PR that lands `Status: accepted` on a decision needs the `human-accepted` label. A PR that deletes an accepted or superseded decision needs `human-removed`. One label does not cover the other.
+The gate uses the merge base with HEAD and includes local staged/unstaged changes. New acceptance requires `human-accepted`; protected deletion requires `human-removed`; editing an accepted/superseded decision requires `human-edited`. A partial diff without the old status is conservatively protected. See [CONTRIBUTING.md](CONTRIBUTING.md) for CI setup and limitations.
 
-## License
+## License and adoption
 
-MIT. See [LICENSE](LICENSE). How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md).  
-Using this in a product repo? Open an [adoption issue](https://github.com/AndysTMC/knowledge-architecture/issues/new?template=adopted.md) and we can list you in [ADOPTERS.md](ADOPTERS.md).
+[MIT](LICENSE). [Contributing](CONTRIBUTING.md). [Security](SECURITY.md).
 
-Continuing *this* repo with another model: [model-activity/](model-activity/) (not part of the spec).
+[Adopter listings](ADOPTERS.md) are not proof of completed field validation. Report adoption through the [issue template](.github/ISSUE_TEMPLATE/adopted.md).
+
+[Model activity](model-activity/_index.md) is development history for this repository, not part of the architecture.

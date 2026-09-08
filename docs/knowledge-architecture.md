@@ -1,7 +1,7 @@
 # A Knowledge Architecture for Humans and Agents
 
-**Version:** 0.1.1  
-**Updated:** 2026-08-17  
+**Version:** 0.1.2
+**Updated:** 2026-09-08
 **Tool table review-by:** 2026-11-17 (§18 ages; treat it as stale after that date until revised)
 
 Start with [docs/kernel.md](kernel.md) if you have not read this before. This file is the full ring.
@@ -348,6 +348,34 @@ Every accepted decision lists **assumptions** that would force a revisit. That i
 
 ---
 
+### Frontmatter vocabulary and validation scope
+
+Information kinds describe meaning; `type:` is the existing serialization vocabulary. These names are not additional authority levels.
+
+| Meaning | `type:` value | Conventional home |
+|---|---|---|
+| Identity | `identity` | `docs/identity.md` |
+| Current attention | `now` | `docs/now.md` |
+| Non-git history | `log` | `docs/log.md` |
+| Current belief / design intent | `belief` | `docs/architecture.md`, `docs/schema.md`, `docs/glossary.md` |
+| Decision | `decision` | `docs/decisions/`, `docs/adr/`, `adr/`, `decisions/` |
+| Evidence stub | `source` | `docs/wiki/raw/` |
+| Compiled belief | `knowledge` | `docs/wiki/pages/` |
+| Procedure or work record | `work` | `docs/skills/`; optional `docs/work/` |
+| Unverified capture | `capture` | `docs/capture/` |
+| Protocol | `protocol` | Optional on protocol documents |
+| Catalog / external deliverable | `map` / `output` | Optional on catalogs / deliverables |
+
+Do not substitute kind names such as `evidence`, `attention`, or `history` for these values. No type renaming is introduced in this patch. `work` covers procedures for compatibility; a distinct procedure type would need a future vocabulary decision.
+
+The linter enforces types at these conventional paths, and checks declared types elsewhere. Each supported decision directory has its own numbering and index. For a package's nested layout, run `--root` against that package. Arbitrary relocated roles and root routing tables remain human review.
+
+Scans include untracked files and prune dependency/build directories. A `.knowledge-fixtures` marker excludes its directory subtree; it is an explicit test-fixture convention, not an access-control boundary. Unmarked `tests/` documentation is checked. Anti-files remain forbidden even when local and untracked.
+
+Markdown checks cover inline links, images, reference links, and heading anchors outside fenced/inline code. Leading `/` is interpreted relative to the lint root; links escaping it are rejected. This is a documented local convention and a bounded parser, not a full rendering engine. A non-empty source pointer proves only that provenance is declared; local targets are checked, external availability and evidential quality require review.
+
+`--strict` continues to include freshness checks. Review attention content before using `--touch-now` (the compatible `--fix` alias); stamping a date does not establish freshness. Invalid dates and conflicting decision statuses are errors.
+
 ## 7. Information flow
 
 ```
@@ -413,11 +441,11 @@ A proposal is not a work package. A work package is committed execution. If you 
 
 **Mechanical checks**
 
-Run `python3 scripts/lint_knowledge.py --strict` (or the copy `--init` wrote). Tests: `python3 -m unittest tests.test_lint_knowledge`. `--version` prints the embedded version; a vendored copy is stale when that string does not match the pin you intended. Re-vendor with `curl -fsSL -o scripts/lint_knowledge.py` from the tag URL in `--version` JSON (`pin`), then run `--version` again. There is no auto-update.
+Run `python3 scripts/lint_knowledge.py --strict` (or the copy `--init` wrote). Tests: `python3 -m unittest tests.test_lint_knowledge`. `--version` prints the embedded version; a vendored copy should match the version you intentionally selected; that string is not a checksum. The `pin` in version JSON restores the last published artifact; it does not discover upgrades. Choose a new published tag explicitly when upgrading. There is no auto-update.
 
 The script fails on anti-files, empty rings, duplicate decision IDs, accepted ADRs without Assumptions, one-way supersede links, `_index.md` rows that disagree with a file on status / date / supersedes, missing `type:` on conventional paths, wiki pages without a source pointer, fat pointers, dual `CLAUDE.md`, broken relative links and missing `#anchors`, and — under `--strict` — a stale `docs/now.md`. `--init` writes Tier 1 only.
 
-**Promotion hook (CI, not the tree linter).** `python3 scripts/lint_knowledge.py --promotion-base <sha>` fails if the diff lands a decision at `Status: accepted` (a flip, or a new file), **or** if it deletes / moves out of the ring a decision whose last seen status is `accepted` or `superseded` (or whose status is not in the hunk — treated as protected). The match is case-insensitive and allows space before the colon. On GitHub: `human-accepted` + `--allow-promotion` for a promotion; `human-removed` + `--allow-deletion` for a removal. Do not stretch one label over both. The labels are human claims, not proof of thought. The job runs only on `pull_request`; a direct push to `main` is not this hook, and is not branch protection. Kind-mixing inside a typed file, and a belief flip with no `docs/log.md` line, stay human review. Do not claim the script reads those.
+**Promotion hook (CI, not the tree linter).** `python3 scripts/lint_knowledge.py --promotion-base <sha>` fails if the diff lands a decision at `Status: accepted` (a flip, or a new file), **or** if it deletes / moves out of the ring a decision whose last seen status is `accepted` or `superseded` (or whose status is not in the hunk — treated as protected). The match is case-insensitive and allows space before the colon. Edits to accepted/superseded records, including demotions and supersession metadata, also require `human-edited` / `--allow-edit`. A diff with no visible old status is conservatively protected. The Git mode uses full context and compares the merge base of the supplied revision and HEAD to the worktree, including staged/unstaged edits. On GitHub: `human-accepted` + `--allow-promotion` for a promotion; `human-removed` + `--allow-deletion` for a removal. No label substitutes for another. The labels are human claims, not proof of thought. The job runs only on `pull_request`; a direct push to `main` is not this hook, and is not branch protection. Kind-mixing inside a typed file, and a belief flip with no `docs/log.md` line, stay human review. Do not claim the script reads those.
 
 When you add more CI of your own: fail if `docs/schema.md` names a field the generated schema does not have.
 
@@ -490,8 +518,8 @@ type: decision
 
 # 0007. Use Postgres for the system of record
 
-Status: accepted
-Date: 2026-08-16
+Status: proposed
+Date: YYYY-MM-DD
 Deciders: …
 Supersedes: —
 Superseded-by: —
@@ -519,7 +547,9 @@ What this buys, what it costs, what we are now forbidden from pretending.
 Observable triggers, not “someday.”
 ```
 
-Once accepted: clarify wording if you must. Do not invert the choice. A new file supersedes it, both IDs linked.
+The template starts proposed. A named human accepts and dates it. Keep `Status:` in the body; identical legacy frontmatter duplicates are tolerated, but disagreement is an error.
+
+Once accepted: clarify wording under human review if you must. Do not invert the choice. A new file supersedes it, both IDs linked.
 
 ---
 
@@ -537,7 +567,7 @@ Once accepted: clarify wording if you must. Do not invert the choice. A new file
 
 **Growth mechanism.** Add nodes inside known rings. A new *kind* is a constitutional event: write a decision, update the matrix.
 
-**IDs.** Start sequential decision numbers when you create the first ADR. Adopt `K`/`S`/`W` IDs when notes outnumber what a human can hold (~30–80). Never reuse an ID. The slug may change; the ID may not.
+**IDs.** Start sequential decision numbers when you create the first ADR. Adopt `K`/`S`/`W` IDs when notes outnumber what a human can hold (~30–80). `K`, `S`, and `W` denote knowledge, source, and work records when an optional local ID convention is adopted; the linter does not enforce these prefixes. Never reuse an ID. The slug may change; the ID may not.
 
 **Splitting a project.** Clone the kernel. Move the relevant decisions and beliefs. Leave stubs: “Moved to repo Y as 0014.” Archive, do not silently delete.
 
@@ -683,14 +713,12 @@ This section is the algorithm for applying the architecture to an existing repos
 **Greenfield Tier 1 (skip the theory).** If the repo has no agent files yet and you only want the kernel:
 
 ```bash
-curl -fsSL -o lint_knowledge.py \
-  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.1/scripts/lint_knowledge.py
-python3 lint_knowledge.py --init --install "…" --test "…"
-python3 scripts/lint_knowledge.py --version
-python3 scripts/lint_knowledge.py --strict
+python3 scripts/lint_knowledge.py --root /absolute/path/to/target --init --test "…"
+python3 /absolute/path/to/target/scripts/lint_knowledge.py --version
+python3 /absolute/path/to/target/scripts/lint_knowledge.py --strict
 ```
 
-`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. The `v0.1.1` pin in `--version` JSON is live. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
+`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. Use the script and docs from the same checkout/ref. Release `v0.1.2` contains a compatible artifact set. On development branches, `--version` may report a development version while `pin` remains the last published linter URL. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
 
 1. **Inspect first.** Inventory existing docs, agent files, package manifests, CI, issue tracker, and whether the project is software, research, mixed, or something else. Do not invent a parallel tree beside files that already play a role.
 2. **Map, then create.** If `PROJECT.md`, `ARCHITECTURE.md`, `adr/`, `docs/adr/`, `DESIGN.md`, or similar already exist, keep them and treat them as the role they already play. Point `AGENTS.md` at those paths. Do not copy their contents into new files with the default names.
@@ -820,7 +848,7 @@ A draft becomes reviewed only when **all** of these hold:
 4. For a decision: Context, Options, Decision, Assumptions (falsifiable), Consequences are present.
 5. For a wiki page: it does not treat another Level 1 page as a source.
 
-Agents may open the PR or edit the draft. They may **not** flip the status field to accepted, and they may **not** delete an accepted or superseded decision (supersede it). Self-promotion is a Level 0 action pretending to be Level 2. On GitHub, a PR that lands `Status: accepted` needs `human-accepted`; a PR that removes a protected decision needs `human-removed`. `lint_knowledge.py --promotion-base` enforces both. The labels are human claims, not a substitute for the five bullets above.
+Agents may open the PR or edit the draft. They may **not** flip the status field to accepted, and they may **not** delete an accepted or superseded decision (supersede it). Self-promotion is a Level 0 action pretending to be Level 2. On GitHub, a PR that lands `Status: accepted` needs `human-accepted`; a PR that removes a protected decision needs `human-removed`. `lint_knowledge.py --promotion-base` enforces those transitions and gates protected edits with `human-edited`. Human review still determines whether the change is a clarification or requires a superseding decision. The labels are human claims, not a substitute for the five bullets above.
 
 ### 19.2 Ownership handoff
 

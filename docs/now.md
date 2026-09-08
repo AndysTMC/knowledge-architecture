@@ -1,27 +1,29 @@
 ---
 type: now
-updated: 2026-08-17
-horizon: 2026-08-17 → 2026-08-31
+updated: 2026-09-08
+horizon: 2026-09-08 → 2026-09-22
 ---
 
 # Now
 
 ## Focus
 
-1. The messy month on TukitoZenx/patrn.ink-api and patrn.ink-ui started 2026-08-17. Do not call the architecture proven until it ends.
-2. Do not move published tags. Do not bump VERSION / cut `v0.1.2` until a real release pass.
+1. Complete the v0.1.2 release of the validated repair of bootstrap, parsing, decision gates, and adoption instructions.
+2. Keep published tags immutable. Prepare a coherent release from the reviewed working tree; do not advertise an unpublished download.
 
 ## Next
 
+- [ ] Human review of proposed decision 0003 and the repair diff.
+- [ ] Complete a release pass before publishing a new tag; use one tested ref for adoption docs and linter.
+- [ ] Collect adopter field notes after the month beginning 2026-08-17; no completed-month evidence has been verified.
 - [ ] Re-check §18 loaders before 2026-11-17.
-- [ ] Fold friction from [issue #1](https://github.com/AndysTMC/knowledge-architecture/issues/1) when it arrives.
-- [ ] Commit the template `type:` fix (and the ADOPTERS rows) when asked. Leave VERSION at 0.1.1 until then.
 
 ## Blocked
 
-- The month has not elapsed. Listing in `ADOPTERS.md` is display, not proof.
+- Field validation remains unverified. The one-month anniversary is 2026-09-17; listings alone are not proof.
+- Remote inspection found main unprotected. Enable required checks and owner review after the release PR completes.
 
 ## Do not do
 
-- Empty wiki, `FILES.md`, or a second copy of the spec in every tool file.
-- Claiming the architecture is “proven” until a product repo has lived with it.
+- Move existing tags, self-accept decision 0003, or overwrite the existing portfolio metadata edit.
+- Create an empty wiki or a second copy of the specification in tool pointers.

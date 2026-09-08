@@ -1,6 +1,6 @@
 # Kernel
 
-**Version:** 0.1.1 · Full spec: [knowledge-architecture.md](knowledge-architecture.md)
+**Version:** 0.1.2 · Full spec: [knowledge-architecture.md](knowledge-architecture.md)
 
 Keep **protocol**, **identity**, **evidence**, **belief**, **decision**, **attention**, and **history** in different homes. Create a file only when it has a real inhabitant.
 
@@ -47,5 +47,7 @@ Read `AGENTS.md` → `docs/now.md` if it exists → accepted decisions as constr
 
 Lint: `python3 scripts/lint_knowledge.py --strict`  
 Init (Tier 1 only): `python3 scripts/lint_knowledge.py --init --test "…"`  
-Version / re-vendor pin: `python3 scripts/lint_knowledge.py --version`  
-Tests: `python3 -m unittest tests.test_lint_knowledge`
+Version / last published pin: `python3 scripts/lint_knowledge.py --version`
+Tests of this specification checkout: `python3 -m unittest tests.test_lint_knowledge`
+
+The tree linter and decision gate are separate modes. Protected edits require human review (`human-edited` in PR CI), in addition to the separate acceptance and removal gates. Development versions do not imply a published download.

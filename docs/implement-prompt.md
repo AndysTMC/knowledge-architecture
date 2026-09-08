@@ -10,12 +10,11 @@ You are working in a **target** repository. This file lives in a **different** r
 4. Apply the procedure to the **current working tree**. Do **not** clone the specification repository over the target. Do not replace the target `README.md` with the specification repo’s README. Do not copy `model-activity/` (that folder is only for developing *this* spec repo).
 5. Then follow everything below.
 
-Canonical URLs (branch `main`):
+Repository location (not a version-selection instruction):
 
 - Spec repo: https://github.com/AndysTMC/knowledge-architecture
-- Kernel (one page): https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/main/docs/kernel.md
-- This prompt: https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/main/docs/implement-prompt.md
-- Specification: https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/main/docs/knowledge-architecture.md
+
+Resolve `docs/kernel.md`, `docs/implement-prompt.md`, `docs/knowledge-architecture.md`, and `scripts/lint_knowledge.py` against the **same supplied ref**. Never replace a supplied tag or commit with `main`. If no ref was supplied, report the selected immutable commit before applying. For an unpublished working tree, use its local files and say that they are unreleased.
 
 If those fetches fail, follow this prompt alone.
 
@@ -23,12 +22,12 @@ Prefer **pinned** URLs (`.../v0.1.0/docs/...` on `raw.githubusercontent.com`) wh
 
 ## Fast path (greenfield Tier 1 only)
 
-If the target has **no** `AGENTS.md` / `CLAUDE.md` yet and the human only wants the kernel, do **not** absorb the full spec. Fetch the linter from the `v0.1.1` pin (or copy it from a clone) and run:
+If the target has **no** `AGENTS.md` / `CLAUDE.md` yet and the human only wants the kernel, do **not** absorb the full spec. Use the linter from the same supplied checkout/ref. Place it at `scripts/lint_knowledge.py` in the target and run:
 
 ```bash
-python3 lint_knowledge.py --init --install "<real>" --test "<real>"
-python3 lint_knowledge.py --version
-python3 lint_knowledge.py --strict
+python3 scripts/lint_knowledge.py --root . --init --install "<real>" --test "<real>"
+python3 scripts/lint_knowledge.py --version
+python3 scripts/lint_knowledge.py --strict
 ```
 
 Then stop and report. `--init` must not create `docs/decisions/`, `docs/wiki/`, or `docs/now.md`. If the repo already has docs or agent files, ignore this path and do Phase 1.
@@ -245,9 +244,9 @@ type: decision
 
 # 0001. <We will …>
 
-Status: accepted
+Status: proposed
 Date: <today>
-Deciders: <if known, else "existing project">
+Deciders: <named human reviewer, or pending>
 Supersedes: —
 Superseded-by: —
 
@@ -260,19 +259,21 @@ Superseded-by: —
 ## Revisit if
 ```
 
+The agent leaves this record `proposed`, including when documenting an existing choice. A named human confirms and accepts it. Use body `Status:` as the canonical field; do not add a second frontmatter status.
+
 Do not create `0000-template.md`. Do not create the directory with only an index.
 
-If ADRs already exist, do not rewrite them. Add `_index.md` only if missing. Put new decisions in the existing directory.
+The linter recognizes root `docs/decisions/`, `docs/adr/`, `adr/`, and `decisions/`. Run with `--root` for a package scope; arbitrary role locations still need human review. If ADRs already exist, do not rewrite them. Add `_index.md` only if missing. Put new decisions in the existing directory.
 
-**docs/skills/<task>.md** — Only if a recurring procedure already lives in the repo (release, migrate, hotfix) or the human named one. One job per file. Do not invent runbooks.
+**docs/skills/<task>.md** — Use `type: work` (a procedure in the existing vocabulary). Only if a recurring procedure already lives in the repo (release, migrate, hotfix) or the human named one. One job per file. Do not invent runbooks.
 
-**docs/wiki/** — Only if this project compiles sources. If earned, create `SCHEMA.md` (ingest / query / lint / file-back-answers; raw is immutable; pages are derived; unreviewed pages are not sources), `index.md`, `log.md` with today’s bootstrap line, and `raw/` + `pages/` only with a real first source or a one-line README in `raw/` explaining what belongs there. Prefer not to create the wiki at all over creating an empty one.
+**docs/wiki/** — Source stubs use `type: source`; compiled pages use `type: knowledge` and a non-empty `source:` URL or relative path to evidence. Only if this project compiles sources. If earned, create `SCHEMA.md` (ingest / query / lint / file-back-answers; raw is immutable; pages are derived; unreviewed pages are not sources), `index.md`, `log.md` with today’s bootstrap line, and `raw/` + `pages/` only with a real first source or a one-line README in `raw/` explaining what belongs there. Prefer not to create the wiki at all over creating an empty one.
 
-**docs/capture/inbox.md** — Only if you are quarantining an existing notes landfill, or the human asked.
+**docs/capture/inbox.md** — Use `type: capture`. Only if you are quarantining an existing notes landfill, or the human asked.
 
-**docs/log.md** — Only if you must record something git will not explain. Otherwise skip.
+**docs/log.md** — Use `type: log`. Only if you must record something git will not explain. Otherwise skip.
 
-**docs/glossary.md** — Only if a term is already argued or overloaded in the repo.
+**docs/glossary.md** — Use `type: belief`. Only if a term is already argued or overloaded in the repo.
 
 **Interface files** — Do not add `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, or `CODE_OF_CONDUCT.md` unless the repo is public / multi-contributor and the file is missing **and** the human wants them. If they exist, leave them.
 

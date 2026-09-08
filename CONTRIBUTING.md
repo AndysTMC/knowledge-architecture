@@ -27,3 +27,25 @@ Accepted decisions are not rewritten in place. Supersede them with a new numbere
 - Ship later fixes as `v0.1.2` or later. Do not `git tag -f` and do not force-push a tag that already exists on GitHub.
 - Do not rewrite `main` history once a tag that outsiders pin has been published.
 - README apply blocks that pin a version should keep pinning that frozen tag until you intentionally bump the pin in a new release.
+
+## Review gates and repository settings
+
+Tree lint and the decision gate are separate commands. `--strict` includes stale attention and the dated tool survey by design. Review content before `--touch-now` (alias `--fix`); it changes only a stale date. A contributor may report stale attention for the maintainer to refresh rather than fabricating a review date.
+
+Create labels `human-accepted`, `human-removed`, `human-edited`, and `adoption` in repository settings. Acceptance, removal, and edits have separate allow flags. Protected edits include clarifications, demotions, and supersession metadata; the label is permission for review, not permission to invert an accepted choice in place.
+
+Configure branch rules to require the `lint` matrix jobs and `promotion`, require code-owner approval for protected files, dismiss stale approvals after new commits, and restrict bypass/direct pushes. The checked-in workflow and CODEOWNERS do not activate those settings automatically. Restrict who can set human-review labels. Labels alone do not establish who reviewed a change.
+
+PR CI runs the gate from both the base revision and proposed tree. The base checker cannot be weakened by changing only the PR's script; the proposed checker exercises new rules. A base release predating edit protection cannot enforce that new rule until the repaired checker is merged. Workflow edits still require protected human review.
+
+For `--promotion-diff`, supply a full-context unified diff (`git diff --unified=1000000`); an unknown pre-image status is conservatively protected. `--promotion-base` resolves the merge base with HEAD, uses full context, includes staged/unstaged tracked changes, and never runs external diff/textconv helpers. Add new files to the index before local gate validation. CI operates on committed files.
+
+## Release checklist
+
+1. Run the full tests on supported Python versions (3.10 and 3.12 in CI), strict tree lint, and a clean temporary Tier 1 init using the actual distributed script path.
+2. Review the adoption prompt, kernel, and linter together; the chosen immutable ref must contain a compatible set. Historical links and older tags may legitimately remain in history.
+3. Replace the development version with the intended release version in the script, kernel, specification, README, and changelog. Set `PIN_URL` to that release only when preparing its publication; do not claim the URL is live before publishing it.
+4. Review the diff and proposed decisions with a named human. Publish a new tag only after the release is authorized. Never move an existing tag.
+5. Verify the published artifact's download and end-to-end init, then advertise that ref in adoption instructions. Start subsequent changes with a development suffix; keep `pin` pointing to the last published artifact until the next release.
+
+A version identifies an intended artifact; it is not an integrity checksum. Restoring a vendored copy from its existing pin is not an upgrade. Release notes must call out any new failing lint rule so adopters can evaluate CI impact.

@@ -7,3 +7,4 @@ Notes for **continuing this repository** with another model. Not part of the kno
 | [grok-4.6.md](grok-4.6.md) | Grok 4.6 (xAI) | How the architecture was designed and first applied here |
 
 Add `model-activity/<model-slug>.md` after the next substantial stretch of work.
+| [review-2026-09-08.md](review-2026-09-08.md) | Codex | Review dispositions, repaired boundaries, validation and release limits |

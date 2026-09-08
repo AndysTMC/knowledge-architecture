@@ -5,7 +5,7 @@
 - Lint: `python3 scripts/lint_knowledge.py --strict`
 - Lint JSON (CI): `python3 scripts/lint_knowledge.py --strict --format json`
 - Version / pin: `python3 scripts/lint_knowledge.py --version --format json`
-- Refresh `docs/now.md` date: `python3 scripts/lint_knowledge.py --fix`
+- Refresh a reviewed `docs/now.md` date only: `python3 scripts/lint_knowledge.py --touch-now`
 - Scaffold Tier 1 elsewhere: `python3 scripts/lint_knowledge.py --init --test "…"`
 - Promotion hook: `python3 scripts/lint_knowledge.py --promotion-base <sha>`
 - Linter tests: `python3 -m unittest tests.test_lint_knowledge`
@@ -18,7 +18,7 @@ There is no install or app server. This repository is a specification.
 - Do not commit secrets, credentials, or `.env` values.
 - Minimal diffs. Touch only what the task requires.
 - For work that will edit more than two files, write `PLAN.md` first (gitignored).
-- Run `python3 scripts/lint_knowledge.py` before calling the task done.
+- Run `python3 scripts/lint_knowledge.py --strict` before calling the task done.
 - Do not silently edit accepted files in `docs/decisions/` or flip a draft to accepted.
 
 ## Authority
@@ -34,6 +34,7 @@ There is no install or app server. This repository is a specification.
 - Proposed decisions: create; leave `proposed`.
 - Accepted decisions, architecture, `docs/now.md`, this file, identity, kernel, license: propose a patch. Do not apply silently.
 - `Status: proposed` → `accepted`: a named human only. On a PR, add the `human-accepted` label.
+- Changes to accepted/superseded decisions require human review; on a PR add `human-edited` (`--allow-edit`).
 - Do not delete an accepted or superseded decision; supersede it. On a PR, add the `human-removed` label. The promotion hook enforces both (`--allow-promotion` / `--allow-deletion`).
 
 ## Where to read

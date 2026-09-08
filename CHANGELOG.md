@@ -2,7 +2,17 @@
 
 All notable changes to this specification are recorded here. Spec versions are git tags.
 
-## Unreleased
+## 0.1.2 — 2026-09-08
+
+- Fix downloaded-script root selection; preserve README under init `--force`; refuse unsafe init paths.
+- Prune dependencies before walking; explicitly marked fixture trees are excluded while ordinary test documentation is checked.
+- Validate conventional alternate ADR paths, conflicting/invalid statuses, dates, supersession cycles, and reordered index headers.
+- Check link titles, images, references, escaped-root links, and code-free anchors; reject empty source pointers and missing local source targets.
+- Return structured findings for malformed dates, text, and Gemini settings; improve command inference and reject conflicting CLI modes.
+- Gate protected edits/demotions separately with `human-edited`; fix multi-file diff boundaries and header-like content; use full-context merge-base comparisons and disable external diff helpers.
+- CI declares read-only permissions, tests Python 3.10/3.12, and runs both base and proposed gates; repository protection setup remains a maintainer action.
+- Align proposed decision templates, frontmatter vocabulary, development-version/published-pin semantics, and adoption instructions. Keep strict clocks and the existing JSON shape; add `--touch-now` as an explicit alias.
+- Review disposition and remaining human release/configuration steps are recorded in model activity. No published tag is moved.
 
 - Decision / identity / architecture / schema / now templates now include the `type:` frontmatter the linter requires (§11, §6.1, implement-prompt). Apply-by-the-book no longer produces a pile of `missing type:` errors. From issue #1.
 - `ADOPTERS.md`: TukitoZenx/patrn.ink-api and patrn.ink-ui, owner-approved listing. Display, not a completed messy month.

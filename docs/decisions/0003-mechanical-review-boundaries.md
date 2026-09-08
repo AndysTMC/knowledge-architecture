@@ -4,9 +4,9 @@ type: decision
 
 # 0003. Make mechanical review boundaries explicit
 
-Status: proposed
+Status: accepted
 Date: 2026-09-08
-Deciders: pending human acceptance
+Deciders: AndysTMC
 Supersedes: —
 Superseded-by: —
 
@@ -22,9 +22,9 @@ Review found that bootstrap defaults could write outside the target, alternate A
 
 ## Decision
 
-Proposed: retain the small vendored CLI; gate protected edits with `human-edited` separately from acceptance and deletion. Treat partial diffs with unknown old status conservatively. Keep strict clock checks and existing type names. Support the four documented conventional decision directories; run package checks with an explicit root.
+We retain the small vendored CLI; gate protected edits with `human-edited` separately from acceptance and deletion. Treat partial diffs with unknown old status conservatively. Keep strict clock checks and existing type names. Support the four documented conventional decision directories; run package checks with an explicit root.
 
-These behaviors are implemented in the unreleased working tree under the user's repair authorization. This record remains proposed until a named human accepts it. It does not authorize deletion or inversion of an existing accepted choice.
+These behaviors shipped in v0.1.2. AndysTMC explicitly approved ADR 0003 on 2026-09-08. This acceptance does not authorize deletion or inversion of an existing accepted choice.
 
 ## Assumptions
 

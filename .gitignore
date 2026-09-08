@@ -40,8 +40,6 @@ id_rsa.pub
 
 # --- Agent / tool local scratch (not team knowledge) ---
 PLAN.md
-SCRATCHPAD.md
-ACTIVE_TASK.md
 CLAUDE.local.md
 *.local.md
 .claude/settings.local.json

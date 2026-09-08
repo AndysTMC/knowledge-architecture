@@ -31,3 +31,5 @@ This repo is a **specification**, not a product app. It uses the architecture on
 `model-activity/` is outside the architecture. Adopters should not create it.
 
 Day-one state of this project was README + spec drafts only. The rings above were added when they had inhabitants (a public repo, a real linter, accepted decisions).
+
+This table explains the earned roles; it is not an exhaustive filesystem inventory. CI and CODEOWNERS live under `.github/`; `.andystmc/project.json` is portfolio-facing metadata, not canonical operational instructions.

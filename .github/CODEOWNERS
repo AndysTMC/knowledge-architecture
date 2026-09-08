@@ -1,0 +1,8 @@
+# Branch rules must require code-owner review for this file to enforce approval.
+/AGENTS.md @AndysTMC
+/docs/kernel.md @AndysTMC
+/docs/identity.md @AndysTMC
+/docs/decisions/ @AndysTMC
+/scripts/ @AndysTMC
+/.github/ @AndysTMC
+/LICENSE @AndysTMC

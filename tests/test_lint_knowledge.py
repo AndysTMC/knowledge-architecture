@@ -910,5 +910,259 @@ class VersionAndPromotionTests(unittest.TestCase):
             self.assertTrue(any("no parseable Status" in e for e in result.errors), result.errors)
 
 
+
+class ReviewRegressionTests(unittest.TestCase):
+    def cli(self, *args, cwd=None):
+        return subprocess.run([sys.executable, str(SCRIPT), *args], cwd=cwd,
+                              capture_output=True, text=True, check=False)
+
+    def test_downloaded_bootstrap_default_root_and_force_preserves_readme(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            root = parent / "project"
+            root.mkdir()
+            bootstrap = root / "lint_knowledge.py"
+            bootstrap.write_text(SCRIPT.read_text())
+            (root / "README.md").write_text("# Valuable quickstart\n")
+            proc = subprocess.run([sys.executable, str(bootstrap), "--init", "--test", "true"],
+                                  cwd=parent, text=True, capture_output=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertFalse((parent / "AGENTS.md").exists())
+            installed = root / "scripts" / "lint_knowledge.py"
+            self.assertTrue(installed.is_file())
+            proc = subprocess.run([sys.executable, str(installed), "--init", "--force", "--test", "true"],
+                                  cwd=parent, text=True, capture_output=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertEqual((root / "README.md").read_text(), "# Valuable quickstart\n")
+
+    def test_no_compat_and_conflicting_modes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.cli("--root", tmp, "--init", "--test", "true", "--no-compat")
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertFalse((Path(tmp) / "CLAUDE.md").exists())
+            result = self.cli("--root", tmp, "--init", "--version", "--format", "json")
+            self.assertFalse(json.loads(result.stdout)["ok"])
+
+    def test_traversal_prunes_dependencies_and_only_marked_fixtures(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                "scripts/lint_knowledge.py": "", "tests/guide.md": "# Test guide\n",
+                "tests/fixtures/.knowledge-fixtures": "", "tests/fixtures/FILES.md": "",
+                "node_modules/pkg/FILES.md": "", "dist/FILES.md": "",
+            })
+            files = {p.relative_to(root).as_posix() for p in lk.iter_files(root)}
+            self.assertIn("tests/guide.md", files)
+            self.assertFalse(any(p.endswith("FILES.md") for p in files))
+            (root / "tests" / "FILES.md").write_text("")
+            self.assertTrue(any("tests/FILES.md" in e for e in lk.lint(root).errors))
+
+    def test_malformed_input_returns_findings_not_tracebacks(self):
+        for files in (
+            {"AGENTS.md": b"\xff"}, {"README.md": b"\xff"},
+            {"docs/now.md": "---\ntype: now\nupdated: 2026-99-99\n---\n"},
+            {".gemini/settings.json": "[]", "GEMINI.md": "@AGENTS.md\n"},
+            {".gemini/settings.json": '{"context": "wrong"}', "GEMINI.md": "@AGENTS.md\n"},
+        ):
+            with self.subTest(files=files), tempfile.TemporaryDirectory() as tmp:
+                root = write_tree(Path(tmp), files)
+                proc = self.cli("--root", str(root), "--strict", "--format", "json")
+                self.assertEqual(proc.returncode, 1, proc.stderr)
+                self.assertFalse(json.loads(proc.stdout)["ok"])
+                self.assertNotIn("Traceback", proc.stderr)
+
+    def test_markdown_destinations_and_phantom_anchors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                "AGENTS.md": "# p\n",
+                "README.md": '# R\n[x](docs/a%20b.md "title")\n![image](pic.png)\n'
+                             '[root](/docs/a%20b.md#real)\n[ref][one]\n[one]: docs/a%20b.md\n'
+                             '`[example](missing.md)`\n[tel](tel:123)\n[x](//example.com/x)\n'
+                             '[paren](docs/a(b).md)\n',
+                "docs/a b.md": "# Real ##\n```sh\n# Imaginary\n```\n",
+                "docs/a(b).md": "# P\n", "pic.png": b"image",
+            })
+            self.assertEqual(lk.lint(root).errors, [])
+            with (root / "README.md").open("a") as handle:
+                handle.write("[bad](docs/a%20b.md#imaginary)\n![bad](missing.png)\n")
+            errors = lk.lint(root).errors
+            self.assertTrue(any("missing anchor" in e for e in errors))
+            self.assertTrue(any("missing.png" in e for e in errors))
+        self.assertEqual(lk.github_slug("ritual + mechanics"), "ritual--mechanics")
+        self.assertIn("custom", lk.heading_slugs("# Heading {#custom}\n"))
+        self.assertIn("html", lk.heading_slugs('<a id="html"></a>\n'))
+
+    def test_links_cannot_read_outside_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            (parent / "outside.md").write_text("# Outside\n")
+            root = write_tree(parent / "project", {"README.md": "[escape](../outside.md#outside)\n"})
+            self.assertTrue(any("escapes repository" in e for e in lk.lint(root).errors))
+
+    def test_sources_must_be_nonempty_and_local_paths_exist(self):
+        for value in ("", "[]", "null", '""', "''"):
+            self.assertFalse(lk.wiki_page_has_source(f"---\ntype: knowledge\nsource: {value}\n---\n# X\n"))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {"docs/wiki/pages/x.md":
+                "---\ntype: knowledge\nsource: ../raw/missing.md\n---\n# X\n"})
+            self.assertTrue(any("missing.md" in e for e in lk.lint(root).errors))
+
+    def decision(self, did="0001", status="proposed", extra=""):
+        return f"---\ntype: decision\n---\n# {did}. Choice\nStatus: {status}\n{extra}\n## Assumptions\n- A\n"
+
+    def test_alternative_decision_paths_status_conflicts_and_unknown_status(self):
+        for directory in lk.DECISION_DIRS:
+            with self.subTest(directory=directory), tempfile.TemporaryDirectory() as tmp:
+                root = write_tree(Path(tmp), {f"{directory}/0001-x.md": self.decision(status="banana")})
+                errors = lk.lint(root).errors
+                self.assertTrue(any("invalid Status" in e for e in errors))
+                self.assertTrue(any("_index.md missing" in e for e in errors))
+                (root / directory / "0001-x.md").write_text(self.decision(extra="status: accepted"))
+                self.assertTrue(any("conflicting Status" in e for e in lk.lint(root).errors))
+        self.assertFalse(lk.is_decision_diff_path("tests/fixtures/docs/decisions/0001-x.md"))
+
+    def test_supersession_cycles_and_live_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                "docs/decisions/0001-a.md": self.decision("0001", "accepted", "Supersedes: 0002\nSuperseded-by: 0002"),
+                "docs/decisions/0002-b.md": self.decision("0002", "accepted", "Supersedes: 0001\nSuperseded-by: 0001"),
+            })
+            errors = lk.lint(root).errors
+            self.assertTrue(any("cycle" in e for e in errors))
+            self.assertTrue(any("not marked superseded" in e for e in errors))
+        self.assertEqual(lk.parse_id_list("0002 (2026-01-15)"), ["0002"])
+
+    def test_reordered_index_columns(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                "docs/decisions/0001-a.md": self.decision(),
+                "docs/decisions/_index.md": "| Title | ID | Supersedes | Date | Status |\n"
+                                           "|---|---|---|---|---|\n| Choice | 0001 | — | — | proposed |\n",
+            })
+            self.assertEqual(lk.lint(root).errors, [])
+
+    def test_command_inference(self):
+        for files, expected in (
+            ({"Cargo.toml": ""}, {"test": "cargo test"}),
+            ({"go.mod": ""}, {"test": "go test ./..."}),
+            ({"pytest.ini": ""}, {"test": "pytest"}),
+            ({"pyproject.toml": "[tool.pytest.ini_options]\n"}, {"install": "pip install -e .", "test": "pytest"}),
+            ({"Makefile": "test:\n\ttrue\nlint:\n\ttrue\n"}, {"test": "make test", "lint": "make lint"}),
+            ({"package.json": '{"scripts":{"test":"x"}}', "pnpm-lock.yaml": ""}, {"install": "pnpm install", "test": "pnpm test"}),
+        ):
+            with self.subTest(files=files), tempfile.TemporaryDirectory() as tmp:
+                self.assertEqual(lk.infer_commands(write_tree(Path(tmp), files)), expected)
+
+    def test_plain_multifile_diff_and_header_like_content(self):
+        diff = "--- a/docs/decisions/0001-x.md\n+++ /dev/null\n@@ -1 +0,0 @@\n-Status: accepted\n" \
+               "--- /dev/null\n+++ b/docs/decisions/0002-y.md\n@@ -0,0 +1 @@\n+Status: proposed\n"
+        self.assertEqual([e.kind for e in lk.gate_events_in_diff(diff)], ["deletion"])
+        diff = "--- a/docs/decisions/0001-x.md\n+++ b/docs/decisions/0001-x.md\n@@ -1,2 +1,2 @@\n" \
+               " Status: accepted\n--- misleading content\n+replacement\n"
+        self.assertEqual([e.kind for e in lk.gate_events_in_diff(diff)], ["edit"])
+
+    def test_edits_demotions_and_separate_allowance(self):
+        diff = "--- a/docs/decisions/0001-x.md\n+++ b/docs/decisions/0001-x.md\n@@ -1 +1 @@\n" \
+               "-Status: accepted\n+Status: proposed\n"
+        self.assertEqual([e.kind for e in lk.gate_events_in_diff(diff)], ["edit"])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "change.diff"
+            path.write_text(diff)
+            self.assertEqual(self.cli("--promotion-diff", str(path), "--allow-promotion").returncode, 1)
+            self.assertEqual(self.cli("--promotion-diff", str(path), "--allow-edit").returncode, 0)
+        partial = "--- a/adr/0001-x.md\n+++ b/adr/0001-x.md\n@@ -20 +20 @@\n-old\n+new\n"
+        self.assertEqual([e.kind for e in lk.gate_events_in_diff(partial)], ["edit"])
+
+    def test_real_git_diff_stale_branch_merge_checkout_and_uncommitted_edit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            def git(*args):
+                proc = subprocess.run(["git", "-C", tmp, *args], capture_output=True, text=True)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                return proc.stdout.strip()
+            git("init", "-b", "main")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.invalid")
+            write_tree(root, {"README.md": "# R\n", "adr/0001-with space.md": self.decision(status="accepted")})
+            git("add", ".")
+            git("commit", "-m", "initial")
+            git("checkout", "-b", "feature")
+            (root / "README.md").write_text("# Feature\n")
+            git("commit", "-am", "feature")
+            git("checkout", "main")
+            write_tree(root, {"adr/0002-new.md": self.decision("0002", "accepted")})
+            git("add", ".")
+            git("commit", "-m", "main advances")
+            git("checkout", "feature")
+            self.assertEqual(lk.gate_events_in_diff(lk.git_decision_diff(root, "main")), [])
+            git("merge", "--no-edit", "main")
+            self.assertEqual(lk.gate_events_in_diff(lk.git_decision_diff(root, "main")), [])
+            with (root / "adr/0001-with space.md").open("a") as handle:
+                handle.write("Changed rationale.\n")
+            self.assertEqual([e.kind for e in lk.gate_events_in_diff(lk.git_decision_diff(root, "main"))], ["edit"])
+            with self.assertRaises(ValueError):
+                lk.git_decision_diff(root, "--output=unsafe")
+
+
+class ArtifactContractTests(unittest.TestCase):
+    def test_versions_and_published_pin_are_explicit(self):
+        for rel in ("README.md", "docs/kernel.md", "docs/knowledge-architecture.md", "CHANGELOG.md"):
+            with self.subTest(rel=rel):
+                self.assertIn(lk.VERSION, (ROOT / rel).read_text())
+        if ".dev" in lk.VERSION:
+            self.assertNotIn(lk.VERSION, lk.PIN_URL)
+        else:
+            self.assertIn(f"v{lk.VERSION}/scripts/lint_knowledge.py", lk.PIN_URL)
+
+    def test_generated_pointers_match_spec_and_init_is_strict_clean(self):
+        import re
+        spec = (ROOT / "docs/knowledge-architecture.md").read_text().split("### Compatibility pack", 1)[1]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lk.init_kernel(root, test="python3 -m unittest")
+            for rel in ("CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md"):
+                match = re.search(r"\*\*`" + re.escape(rel) + r"`\*\*\s+```markdown\n(.*?)```", spec, re.S)
+                self.assertIsNotNone(match, rel)
+                self.assertEqual((root / rel).read_text(), match.group(1))
+            self.assertEqual(lk.lint(root, strict=True).errors, [])
+
+    def test_init_preflight_rejects_escaping_symlink_before_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "project"
+            root.mkdir()
+            outside = Path(tmp) / "outside.md"
+            outside.write_text("preserve")
+            (root / "AGENTS.md").symlink_to(outside)
+            result = lk.init_kernel(root, test="true", force=True)
+            self.assertFalse(result.ok)
+            self.assertFalse((root / "README.md").exists())
+            self.assertEqual(outside.read_text(), "preserve")
+
+    def test_init_preflight_rejects_file_as_parent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {".github": "not a directory"})
+            result = lk.init_kernel(root, test="true")
+            self.assertFalse(result.ok)
+            self.assertFalse((root / "README.md").exists())
+
+    def test_gemini_duplicate_context_and_date_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                "AGENTS.md": "# Protocol\n", "GEMINI.md": "@AGENTS.md\n",
+                ".gemini/settings.json": '{"context":{"fileName":["AGENTS.md","GEMINI.md"]}}',
+            })
+            self.assertTrue(any("twice" in e for e in lk.lint(root).errors))
+            (root / ".gemini/settings.json").unlink()
+            write_tree(root, {"docs/now.md": "---\ntype: now\nupdated: 2020-01-01\n---\nKeep content.\n"})
+            proc = subprocess.run([sys.executable, str(SCRIPT), "--root", tmp, "--touch-now", "--format", "json"],
+                                  capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertIn("Keep content.", (root / "docs/now.md").read_text())
+            self.assertIn("content not reviewed", json.loads(proc.stdout)["fixed"][0])
+
+    def test_binary_protected_edit_is_conservative(self):
+        diff = "diff --git a/adr/0001-x.md b/adr/0001-x.md\nBinary files a/adr/0001-x.md and b/adr/0001-x.md differ\n"
+        self.assertEqual([e.kind for e in lk.gate_events_in_diff(diff)], ["edit"])
+
+
 if __name__ == "__main__":
     unittest.main()

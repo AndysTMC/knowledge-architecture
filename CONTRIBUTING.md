@@ -46,6 +46,6 @@ For `--promotion-diff`, supply a full-context unified diff (`git diff --unified=
 2. Review the adoption prompt, kernel, and linter together; the chosen immutable ref must contain a compatible set. Historical links and older tags may legitimately remain in history.
 3. Replace the development version with the intended release version in the script, kernel, specification, README, and changelog. Set `PIN_URL` to that release only when preparing its publication; do not claim the URL is live before publishing it.
 4. Review the diff and proposed decisions with a named human. Publish a new tag only after the release is authorized. Never move an existing tag.
-5. Verify the published artifact's download and end-to-end init, then advertise that ref in adoption instructions. Start subsequent changes with a development suffix; keep `pin` pointing to the last published artifact until the next release.
+5. Verify the published artifact's download and end-to-end init, then advertise that ref in adoption instructions. Start a development version and an Unreleased changelog section only when actual linter or specification changes need a future release. Do not open an empty development cycle for release bookkeeping, portfolio updates, or ADR acceptance. Keep `pin` pointing to the last published artifact until the next release.
 
 A version identifies an intended artifact; it is not an integrity checksum. Restoring a vendored copy from its existing pin is not an upgrade. Release notes must call out any new failing lint rule so adopters can evaluate CI impact.

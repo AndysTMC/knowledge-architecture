@@ -1,6 +1,6 @@
 # Kernel
 
-**Version:** 0.1.3.dev0 (unreleased) · Full spec: [knowledge-architecture.md](knowledge-architecture.md)
+**Version:** 0.1.2 · Full spec: [knowledge-architecture.md](knowledge-architecture.md)
 
 Keep **protocol**, **identity**, **evidence**, **belief**, **decision**, **attention**, and **history** in different homes. Create a file only when it has a real inhabitant.
 

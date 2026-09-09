@@ -1,6 +1,6 @@
 # Knowledge Architecture
 
-**0.1.3.dev0 (unreleased)** — a typed system for project knowledge that humans and coding agents share. Latest published release: **v0.1.2**. Published tags are immutable.
+**0.1.2** — a typed system for project knowledge that humans and coding agents share. Latest published release: **v0.1.2**. Published tags are immutable.
 
 Start with [docs/kernel.md](docs/kernel.md). The [full specification](docs/knowledge-architecture.md) defines the model; the [implementation prompt](docs/implement-prompt.md) applies it elsewhere.
 

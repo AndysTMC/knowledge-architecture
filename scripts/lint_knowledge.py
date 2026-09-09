@@ -22,7 +22,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-VERSION = "0.1.3.dev0"
+VERSION = "0.1.2"
 # Last published artifact; a development version is not available at this URL.
 PIN_URL = (
     "https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/"

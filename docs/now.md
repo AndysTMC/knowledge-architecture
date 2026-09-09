@@ -1,31 +1,34 @@
 ---
 type: now
-updated: 2026-09-08
-horizon: 2026-09-08 → 2026-09-22
+updated: 2026-09-09
+horizon: 2026-09-09 → 2026-09-23
 ---
 
 # Now
 
 ## Focus
 
-1. Collect real adopter feedback on v0.1.2, published and verified on 2026-09-08.
-2. Keep v0.1.2 immutable. Main is 0.1.3.dev0; its published pin remains v0.1.2.
+The v0.1.2 repair and release work is complete. Main uses the released linter version and pin; no new development cycle is open.
+
+## Completed
+
+- Published v0.1.2 through PR #2 and verified the downloaded artifacts against the immutable tag.
+- Passed all 82 tests, strict lint, and Python 3.10/3.12 CI.
+- Enabled required CI checks and code-owner review on main; administrators retain bypass permission.
+- Recorded AndysTMC's explicit acceptance of ADR 0003 and corrected the portfolio in PR #4.
+- Closed issue #1 after verifying the released templates and reproducing the missing-type failure in control fixtures.
 
 ## Next
 
-- [x] AndysTMC explicitly approved ADR 0003 on 2026-09-08; record acceptance and update the portfolio to match v0.1.2.
-- [x] Release v0.1.2 through PR #2; tests passed on Python 3.10/3.12 locally and in CI, and downloaded artifacts matched the tag and passed init/strict lint.
-- [ ] Collect adopter field notes after the month beginning 2026-08-17; no completed-month evidence has been verified.
-- [ ] Re-check §18 loaders before 2026-11-17.
+No queued implementation tasks. Routine maintenance remains: review the dated §18 tool survey before 2026-11-17 and assess adopter feedback when available.
 
-## Blocked
+## Validation boundary
 
-- Field validation remains unverified. The one-month anniversary is 2026-09-17; listings alone are not proof.
-
+The adopter field trial started 2026-08-17. A completed-month evaluation has not been verified; release completion and adopter listings do not establish field validation.
 
 ## Do not do
 
-- Move existing tags or promote any future decision without explicit human acceptance.
-- Create an empty wiki or a second copy of the specification in tool pointers.
+- Move published tags or promote future decisions without explicit human acceptance.
+- Open an empty development cycle or create unused documentation directories.
 
 GitHub protection is managed in repository settings. Verify it through the API before relying on it; checked-in CODEOWNERS alone does not enforce approval.

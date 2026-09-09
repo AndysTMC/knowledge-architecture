@@ -44,7 +44,7 @@
         ]
     },
     "future": {
-        "next": "Collect adopter feedback on v0.1.2 while developing on 0.1.3.dev0. Adopter listings are not evidence of completed field validation.",
+        "next": "Maintain the verified v0.1.2 release and use adopter feedback to decide whether further changes are needed. Adopter listings are not evidence of completed field validation.",
         "roadmap": [
             "Review the dated agent-compatibility table before 2026-11-17.",
             "Use adopter field reports to guide further specification and linter changes.",

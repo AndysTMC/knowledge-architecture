@@ -4,9 +4,9 @@ type: decision
 
 # 0004. Keep the CLAUDE.md import pointer now that Claude Code reads AGENTS.md
 
-Status: proposed
+Status: accepted
 Date: 2026-10-27
-Deciders: AndysTMC (pending)
+Deciders: AndysTMC
 Supersedes: —
 Superseded-by: —
 

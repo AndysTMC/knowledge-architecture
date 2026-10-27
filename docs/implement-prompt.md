@@ -18,7 +18,7 @@ Resolve `docs/kernel.md`, `docs/implement-prompt.md`, `docs/knowledge-architectu
 
 If those fetches fail, follow this prompt alone.
 
-Prefer **pinned** URLs (`.../<tag>/docs/...` on `raw.githubusercontent.com`, for example `v0.1.2`) when the human asked for a vendor/offline copy. Do not fetch from `main` if they pinned a tag.
+Prefer **pinned** URLs (`.../<tag>/docs/...` on `raw.githubusercontent.com`, for example `v0.2.0`) when the human asked for a vendor/offline copy. Do not fetch from `main` if they pinned a tag.
 
 ## Fast path (greenfield Tier 1 only)
 

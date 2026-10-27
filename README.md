@@ -1,42 +1,46 @@
 # Knowledge Architecture
 
-**0.1.3.dev0 (unreleased)** — a typed system for project knowledge that humans and coding agents share. Latest published release: **v0.1.2**. Published tags are immutable.
+**0.2.0** — a typed system for project knowledge that humans and coding agents share. Latest published release: **v0.2.0**. Published tags are immutable.
 
-Start with [docs/kernel.md](docs/kernel.md). The [full specification](docs/knowledge-architecture.md) defines the model; the [implementation prompt](docs/implement-prompt.md) applies it elsewhere.
+Most repositories that coding agents work in end up with conflicting `AGENTS.md`, `CLAUDE.md`, TODO, and notes files, and nothing tells an agent which of them is true. This project gives each kind of knowledge one home: how to operate, what we decided, what we are doing now. Each kind has an authority level, and a small linter keeps the result honest.
 
-Keep protocol, cognition, and source compilation in separate homes. Create a file only when it has a real inhabitant. For a personal or solo repository, `README.md` + `AGENTS.md` may be enough.
+- **[Kernel](docs/kernel.md)**: the one-page version. Start here.
+- **[Full specification](docs/knowledge-architecture.md)**: the model, the layout, and the edge cases.
+- **[Implementation prompt](docs/implement-prompt.md)**: hand it to an agent to apply the spec to a repository.
+- **`scripts/lint_knowledge.py`**: a single file that checks the tree, scaffolds a new repository, and gates decision changes in pull requests.
 
-This repository [uses the architecture on itself](docs/this-repo.md).
+This repository [applies the architecture to itself](docs/this-repo.md).
 
 ## Requirements
 
-Python **3.10+**, standard library only. Git is needed for `--promotion-base`. There is no install step or app server.
+Python **3.10+**, standard library only. Git is needed for the decision gate. There is nothing to install.
 
-## Fast Tier 1
+## Use it in a repository
 
-From the target repository, download the pinned release and supply the real test command:
+Pick the case that matches the target repository. Always use the same release (`v0.2.0` below) for the linter and the documents.
+
+### 1. New repository, or no agent files yet
+
+From the target repository, run:
 
 ```bash
 curl -fsSL --create-dirs -o scripts/lint_knowledge.py \
-  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.2/scripts/lint_knowledge.py
-python3 scripts/lint_knowledge.py --root . --init --test "pytest"
+  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.2.0/scripts/lint_knowledge.py
+python3 scripts/lint_knowledge.py --init --test "pytest"
 python3 scripts/lint_knowledge.py --strict
 ```
 
-Or use this checkout against an existing target directory:
+Replace `pytest` with the real test command; `--install`, `--dev`, and `--lint-command` are optional. Init creates a README if there is none, an `AGENTS.md` hub, the three tool pointers (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`), and the vendored linter. It never creates empty `docs/` folders, and it never overwrites existing files unless you pass `--force`; `--force` still keeps your README. Commands that init infers from manifests are hints, so read `AGENTS.md` before committing it.
 
-```bash
-python3 scripts/lint_knowledge.py --root /absolute/path/to/target --init --test "pytest"
-python3 /absolute/path/to/target/scripts/lint_knowledge.py --strict
-```
+### 2. Existing repository with its own docs, never adopted
 
-Init creates a missing README, an `AGENTS.md` hub, three tool pointers, and a vendored linter. It does not create empty `docs/` rings. Existing files are preserved; `--force` replaces protocol, pointers, and the linter but preserves README. `--no-compat` omits the pointers.
+Init cannot map what is already there, so let an agent do it in two phases. Give it these three files from the same tag:
 
-Commands inferred from manifests are hints; review them before use. Existing repositories with documentation need the inspect/apply flow below.
+- `https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.2.0/docs/kernel.md`
+- `https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.2.0/docs/implement-prompt.md`
+- `https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.2.0/docs/knowledge-architecture.md`
 
-## Apply to an existing repository
-
-Give the agent the kernel, implementation prompt, and full specification **from the same checkout or immutable commit**:
+Then send this:
 
 ```text
 Apply the supplied Knowledge Architecture to the current target repository.
@@ -44,44 +48,50 @@ Phase 1 only: inspect, map existing files, report proposed changes and conflicts
 and stop without writing. Preserve existing role locations and local instructions.
 ```
 
-After reviewing the report, authorize Phase 2. New decisions remain `proposed`; a named human accepts them.
+Review the report, then authorize Phase 2. The agent keeps files that already play a role, such as an existing `adr/` folder, and points `AGENTS.md` at them. Any decision it writes stays `proposed` until a named human accepts it.
 
-Use `v0.1.2` for the kernel, implementation prompt, full spec, and linter. Historical `v0.1.0` templates lack some frontmatter required by the `v0.1.1` linter. Do not combine those pins as a working adoption recipe. The `v0.1.2` artifact set includes the template fixes.
+### 3. Repository that already uses it (upgrading)
 
-## Vendored versions
+1. Check what you have: `python3 scripts/lint_knowledge.py --version --format json`. Copies never update themselves.
+2. Read the [changelog](CHANGELOG.md) entries between that version and the target release, especially the lines on new failures.
+3. Re-vendor the target release's script: the same `curl` as in case 1, with that tag.
+4. Run `python3 scripts/lint_knowledge.py --strict` and fix what it reports. Do **not** re-run `--init --force` on a hub you have customized, because it replaces `AGENTS.md`.
+5. Carry template changes over by hand where they apply. For 0.2.0, add a `Knowledge lint` line running `python3 scripts/lint_knowledge.py --strict` to the Commands section of `AGENTS.md`, and the `human-edited` rule to its write permissions.
+6. If you run the decision gate in CI, update the workflow too. The spec's §8 has a minimal adopter workflow.
 
-```bash
-python3 scripts/lint_knowledge.py --version --format json
-```
-
-`version` identifies this script; `pin` points to the last **published** linter, currently `v0.1.2`. A development version can differ from that artifact. Downloading the installed copy's `pin` restores its published baseline; it does not discover an upgrade.
-
-To upgrade, choose a published release explicitly, inspect its changes, and vendor that release's script. Use the same release's adoption documents. Copies do not auto-update; version strings are not checksums. Published tags are never moved.
-
-## Tiers
+## Growing past Tier 1
 
 | Tier | Add when | Contents |
 |---|---|---|
-| 1 | Agents work here | Human door, protocol hub, pointers |
+| 1 | Agents work here | `README.md`, `AGENTS.md` hub, tool pointers |
 | 2 | Work needs shared attention | Dated `docs/now.md` |
-| 3 | First durable choice | Decisions and their index |
+| 3 | First choice you would hate to re-litigate | `docs/decisions/` and its `_index.md` |
 
-## Validate
+Create a file only when it has a real inhabitant. A personal or solo repository may need nothing beyond Tier 1.
+
+## Everyday commands
+
+```bash
+python3 scripts/lint_knowledge.py --strict          # check the tree (include in CI)
+python3 scripts/lint_knowledge.py --touch-now       # re-date docs/now.md after reviewing it
+python3 scripts/lint_knowledge.py --promotion-base main --format json   # decision gate
+```
+
+`--strict` treats warnings as errors and includes the attention clock: a `docs/now.md` older than 14 days fails. The decision gate fails when a pull request accepts, edits, or deletes a protected decision without the matching label: `human-accepted`, `human-edited`, or `human-removed`. JSON output is `{ "ok", "errors", "warnings", "fixed" }`. For a package with its own rings, add `--root <package>`.
+
+## Versions
+
+`--version` reports the embedded version. `pin` is the URL of the last **published** linter, currently `v0.2.0`. Restoring from a pin is not an upgrade: choose a newer tag explicitly. Version strings are not checksums, and published tags are never moved.
+
+## Working on this repository
 
 ```bash
 python3 -m unittest tests.test_lint_knowledge
 python3 scripts/lint_knowledge.py --strict
-python3 scripts/lint_knowledge.py --promotion-base main --format json
 ```
 
-Tree lint and the decision gate are separate modes. JSON retains `{ "ok", "errors", "warnings", "fixed" }`. Strict lint includes clock checks; `--touch-now` (alias `--fix`) refreshes only a stale date, not the content.
-
-The gate uses the merge base with HEAD and includes local staged/unstaged changes. New acceptance requires `human-accepted`; protected deletion requires `human-removed`; editing an accepted/superseded decision requires `human-edited`. A partial diff without the old status is conservatively protected. See [CONTRIBUTING.md](CONTRIBUTING.md) for CI setup and limitations.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the release checklist and CI setup, and [AGENTS.md](AGENTS.md) for agent rules. [Model activity](model-activity/_index.md) is this repository's development history, not part of the architecture.
 
 ## License and adoption
 
-[MIT](LICENSE). [Contributing](CONTRIBUTING.md). [Security](SECURITY.md).
-
-[Adopter listings](ADOPTERS.md) are not proof of completed field validation. Report adoption through the [issue template](.github/ISSUE_TEMPLATE/adopted.md).
-
-[Model activity](model-activity/_index.md) is development history for this repository, not part of the architecture.
+[MIT](LICENSE). [Security](SECURITY.md). Report an adoption with the [issue template](.github/ISSUE_TEMPLATE/adopted.md); [adopter listings](ADOPTERS.md) are not proof of completed field validation.

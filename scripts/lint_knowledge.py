@@ -22,7 +22,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-VERSION = "0.1.2"
+VERSION = "0.1.3.dev0"
 # Last published artifact; a development version is not available at this URL.
 PIN_URL = (
     "https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/"
@@ -78,7 +78,9 @@ README_WARN_LINES = 150
 DECISION_TITLE = re.compile(r"^#\s+(\d{4})\.\s+", re.MULTILINE)
 DECISION_FILENAME = re.compile(r"^(\d{4})-.+\.md$")
 UPDATED = re.compile(r"^updated:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
-HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$")
+SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
+HTML_COMMENT = re.compile(r"<!--[\s\S]*?-->")
 CUSTOM_ID = re.compile(r"\{#([A-Za-z0-9._:-]+)\}\s*$")
 HTML_ID = re.compile(r"<(?:a|h[1-6])\s+[^>]*(?:id|name)=[\"']([^\"']+)[\"']", re.IGNORECASE)
 SUP_FIELD = re.compile(r"^Supersedes:\s*(.+)\s*$", re.MULTILINE | re.IGNORECASE)
@@ -111,15 +113,36 @@ def repo_root() -> Path:
     return parent.parent if parent.name == "scripts" else parent
 
 
+def git_ignored_dirs(root: Path) -> set[Path]:
+    """Directories Git ignores under root; empty outside a work tree or without git."""
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--others", "--ignored", "--exclude-standard",
+             "--directory", "-z"],
+            check=False, capture_output=True,
+        )
+    except OSError:
+        return set()
+    if proc.returncode:
+        return set()
+    entries = proc.stdout.decode("utf-8", "surrogateescape").split("\0")
+    return {(root / entry.rstrip("/")) for entry in entries if entry.endswith("/")}
+
+
 def iter_files(root: Path):
-    # Include untracked work, but prune dependencies before descending into them.
-    # A marker scopes fixture exclusions to their actual owner, not all tests/.
+    # Include untracked work, but prune dependencies and Git-ignored directories
+    # before descending into them. Ignored files outside those directories stay
+    # in scope. A marker scopes fixture exclusions to their owner, not all tests/.
+    ignored = git_ignored_dirs(root)
     for directory, dirs, names in os.walk(root, followlinks=False):
         base = Path(directory)
         if base != root and ".knowledge-fixtures" in names:
             dirs[:] = []
             continue
-        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIR_NAMES and not (base / d).is_symlink())
+        dirs[:] = sorted(
+            d for d in dirs
+            if d not in SKIP_DIR_NAMES and not (base / d).is_symlink() and base / d not in ignored
+        )
         for name in sorted(names):
             path = base / name
             if path.is_file() and not path.is_symlink():
@@ -127,21 +150,28 @@ def iter_files(root: Path):
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    # utf-8-sig drops a leading BOM that would otherwise hide frontmatter.
+    return path.read_text(encoding="utf-8-sig")
 
 
 def line_count(text: str) -> int:
     return len(text.splitlines())
 
 
-def frontmatter_type(text: str) -> str | None:
+def split_frontmatter(text: str) -> tuple[str | None, str]:
+    """Return (frontmatter block, body). The block is None without a closed fence."""
     if not text.startswith("---\n"):
-        return None
-    rest = text[4:]
-    end = re.search(r"^---\s*$", rest, re.MULTILINE)
+        return None, text
+    end = re.search(r"^---[ \t]*$", text[4:], re.MULTILINE)
     if not end:
+        return None, text
+    return text[4:4 + end.start()], text[4 + end.end():]
+
+
+def frontmatter_type(text: str) -> str | None:
+    block, _ = split_frontmatter(text)
+    if block is None:
         return None
-    block = rest[: end.start()]
     m = re.search(r"^type:\s*(\S+)\s*$", block, re.MULTILINE)
     return m.group(1).strip().strip("\"'") if m else None
 
@@ -201,6 +231,7 @@ def markdown_links(text: str) -> list[str]:
     """
     prose = prose_without_fences(text)
     prose = re.sub(r"(`+)(?!`)([\s\S]*?)(?<!`)\1(?!`)", "", prose)
+    prose = HTML_COMMENT.sub("", prose)
     definitions: dict[str, str] = {}
     def definition(match: re.Match) -> str:
         definitions[" ".join(match.group(1).lower().split())] = match.group(2).strip()
@@ -254,20 +285,32 @@ def github_slug(heading: str) -> str:
     # github-slugger: drop punctuation, then each whitespace becomes one hyphen.
     # Do not collapse the resulting "--" (e.g. "ritual + mechanics" → "ritual--mechanics").
     text = CUSTOM_ID.sub("", heading).strip().lower()
+    text = re.sub(r"(?<!!)\[([^\]]*)\](?:\([^)]*\)|\[[^\]]*\])", r"\1", text)  # link text only
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"[^\w\s-]", "", text, flags=re.UNICODE)
     return re.sub(r"\s", "-", text)
 
 
 def heading_slugs(text: str) -> set[str]:
-    text = prose_without_fences(text)
+    text = HTML_COMMENT.sub("", prose_without_fences(split_frontmatter(text)[1]))
     slugs: set[str] = set()
     seen: dict[str, int] = {}
-    for line in text.splitlines():
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
         m = HEADING.match(line)
-        if not m:
+        previous = lines[i - 1].strip() if i else ""
+        if m:
+            raw = re.sub(r"[ \t]+#+[ \t]*$", "", m.group(2)).strip()
+        elif (
+            SETEXT_UNDERLINE.match(line)
+            and previous
+            and not HEADING.match(lines[i - 1])
+            and not SETEXT_UNDERLINE.match(lines[i - 1])
+            and not re.match(r"(?:[-*+>|]|\d+[.)])(?:\s|$)", previous)
+        ):
+            raw = previous
+        else:
             continue
-        raw = re.sub(r"[ \t]+#+[ \t]*$", "", m.group(2)).strip()
         custom = CUSTOM_ID.search(raw)
         slug = custom.group(1) if custom else github_slug(raw)
         n = seen.get(slug, 0)
@@ -325,18 +368,15 @@ def status_token(status: str) -> str:
 
 def source_pointers(text: str) -> list[str]:
     pointers: list[str] = []
-    if text.startswith("---\n"):
-        rest = text[4:]
-        end = re.search(r"^---\s*$", rest, re.MULTILINE)
-        if end:
-            block = rest[: end.start()]
-            for match in re.finditer(r"^(?:source|sources):[ \t]*([^\n]*)(\n(?:[ \t]+-[ \t]+[^\n]*\n?)*)", block + "\n", re.MULTILINE | re.IGNORECASE):
-                value = match.group(1).strip()
-                values = value.strip("[]").split(",") if value else re.findall(r"^[ \t]+-[ \t]+(.+)$", match.group(2), re.MULTILINE)
-                for item in values:
-                    item = item.strip().strip("\"'")
-                    if item and item.lower() not in {"null", "none", "~"}:
-                        pointers.append(item)
+    block, _ = split_frontmatter(text)
+    if block is not None:
+        for match in re.finditer(r"^(?:source|sources):[ \t]*([^\n]*)(\n(?:[ \t]+-[ \t]+[^\n]*\n?)*)", block + "\n", re.MULTILINE | re.IGNORECASE):
+            value = match.group(1).strip()
+            values = value.strip("[]").split(",") if value else re.findall(r"^[ \t]+-[ \t]+(.+)$", match.group(2), re.MULTILINE)
+            for item in values:
+                item = item.strip().strip("\"'")
+                if item and item.lower() not in {"null", "none", "~"}:
+                    pointers.append(item)
     for raw in markdown_links(text):
         dest = raw.strip()
         if dest.startswith(("http://", "https://")):
@@ -353,6 +393,9 @@ def wiki_page_has_source(text: str) -> bool:
 def lint(root: Path, stale_days: int = 14, strict: bool = False, fix: bool = False) -> LintResult:
     root = root.resolve()
     result = LintResult()
+    if not root.is_dir():
+        result.errors.append(f"lint root is not a directory: {root}")
+        return result
     files = list(iter_files(root))
 
     def err(msg: str) -> None:
@@ -420,6 +463,8 @@ def lint(root: Path, stale_days: int = 14, strict: bool = False, fix: bool = Fal
     ):
         if not p.is_file():
             continue
+        if p.is_symlink() and p.resolve() == agents.resolve():
+            continue  # a symlink to the hub is a pointer by construction (§18)
         text = safe_read(p)
         n = line_count(text)
         if n > POINTER_MAX_LINES:
@@ -763,6 +808,8 @@ def gate_events_in_diff(diff_text: str) -> list[GateEvent]:
         old_remaining = new_remaining = 0
 
     for line in diff_text.splitlines():
+        if line.startswith("\x1b["):
+            raise ValueError("diff contains terminal color codes; regenerate it with --no-color")
         if line.startswith("diff --git "):
             paths = re.match(r'^diff --git (".*?"|a/.*?) (".*"|b/.*)$', line)
             if not paths:
@@ -786,7 +833,8 @@ def gate_events_in_diff(diff_text: str) -> list[GateEvent]:
                 new.append(line[1:])
                 new_remaining = max(0, new_remaining - 1)
                 changed = True
-            elif line.startswith(" "):
+            elif line.startswith(" ") or not line:
+                # diff.suppressBlankEmpty prints an empty context line without its space.
                 old.append(line[1:])
                 new.append(line[1:])
                 old_remaining = max(0, old_remaining - 1)
@@ -831,14 +879,19 @@ def git_decision_diff(root: Path, base: str) -> str:
     ancestor = git("merge-base", commit, "HEAD")
     # Include staged/unstaged changes for local use. CI's merge checkout compares
     # naturally against its base parent; stale feature branches use their ancestor.
-    return git("diff", "--no-ext-diff", "--no-textconv", "--unified=1000000",
-               "--find-renames", ancestor, "--", ".")
+    # Pin the output format against user config (color, noprefix, mnemonicPrefix),
+    # and report paths relative to root so a package --root sees its own ring.
+    # Only decision directories are diffed: a move out of the ring reads as a deletion.
+    return git("diff", "--no-color", "--no-ext-diff", "--no-textconv", "--src-prefix=a/",
+               "--dst-prefix=b/", "--relative", "--unified=1000000", "--find-renames",
+               ancestor, "--", *DECISION_DIRS)
 
 
 def infer_commands(root: Path) -> dict[str, str]:
     cmds: dict[str, str] = {}
     pkg = root / "package.json"
     if pkg.is_file():
+        data: object = None
         try:
             data = json.loads(read_text(pkg))
             scripts = data.get("scripts", {}) if isinstance(data, dict) else {}
@@ -846,16 +899,29 @@ def infer_commands(root: Path) -> dict[str, str]:
                 scripts = {}
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             scripts = {}
-        manager = "pnpm" if (root / "pnpm-lock.yaml").exists() else "yarn" if (root / "yarn.lock").exists() else "npm"
+        declared = data.get("packageManager") if isinstance(data, dict) else None
+        declared = declared.split("@", 1)[0] if isinstance(declared, str) else ""
+        if declared in {"npm", "pnpm", "yarn", "bun"}:
+            manager = declared
+        elif (root / "pnpm-lock.yaml").exists():
+            manager = "pnpm"
+        elif (root / "yarn.lock").exists():
+            manager = "yarn"
+        elif (root / "bun.lock").exists() or (root / "bun.lockb").exists():
+            manager = "bun"
+        else:
+            manager = "npm"
+        # `bun test` is Bun's own runner, not the package script.
+        run = f"{manager} run"
         cmds.setdefault("install", f"{manager} install")
         if "test" in scripts:
-            cmds.setdefault("test", f"{manager} test")
+            cmds.setdefault("test", f"{run} test" if manager == "bun" else f"{manager} test")
         if "lint" in scripts:
-            cmds.setdefault("lint", f"{manager} run lint")
+            cmds.setdefault("lint", f"{run} lint")
         if "dev" in scripts:
-            cmds.setdefault("dev", f"{manager} run dev")
+            cmds.setdefault("dev", f"{run} dev")
         elif "start" in scripts:
-            cmds.setdefault("dev", f"{manager} start")
+            cmds.setdefault("dev", f"{run} start" if manager == "bun" else f"{manager} start")
     if (root / "Cargo.toml").is_file():
         cmds.setdefault("test", "cargo test")
     if (root / "go.mod").is_file():
@@ -863,7 +929,14 @@ def infer_commands(root: Path) -> dict[str, str]:
     pyproject = root / "pyproject.toml"
     setup = root / "setup.py"
     if pyproject.is_file() or setup.is_file() or (root / "pytest.ini").is_file():
-        if pyproject.is_file() or setup.is_file():
+        runner = ""
+        if (root / "uv.lock").is_file():
+            runner = "uv run "
+            cmds.setdefault("install", "uv sync")
+        elif (root / "poetry.lock").is_file():
+            runner = "poetry run "
+            cmds.setdefault("install", "poetry install")
+        elif pyproject.is_file() or setup.is_file():
             cmds.setdefault("install", "pip install -e .")
         blob = ""
         if pyproject.is_file():
@@ -872,9 +945,9 @@ def infer_commands(root: Path) -> dict[str, str]:
             except (OSError, UnicodeDecodeError):
                 blob = ""
         if "pytest" in blob or (root / "pytest.ini").is_file():
-            cmds.setdefault("test", "pytest")
+            cmds.setdefault("test", f"{runner}pytest")
         else:
-            cmds.setdefault("test", "python3 -m unittest")
+            cmds.setdefault("test", f"{runner}python3 -m unittest")
     makefile = root / "Makefile"
     if makefile.is_file():
         try:
@@ -889,7 +962,10 @@ def infer_commands(root: Path) -> dict[str, str]:
 
 
 def render_agents(commands: dict[str, str], routes: list[tuple[str, str]]) -> str:
-    labels = (("install", "Install"), ("dev", "Dev"), ("test", "Test"), ("lint", "Lint / format"))
+    labels = (
+        ("install", "Install"), ("dev", "Dev"), ("test", "Test"), ("lint", "Lint / format"),
+        ("knowledge", "Knowledge lint"),
+    )
     cmd_lines = [f"- {label}: `{commands[key]}`" for key, label in labels if commands.get(key)]
     rows = "\n".join(f"| {need} | {path} |" for need, path in routes)
     return (
@@ -970,6 +1046,9 @@ def init_kernel(
             "cannot infer install/test/lint; pass --install, --test, --dev, and/or --lint-command"
         )
         return result
+    if not commands.get("test"):
+        result.warnings.append("no test command inferred; pass --test so agents can verify their work")
+    commands["knowledge"] = "python3 scripts/lint_knowledge.py --strict"
 
     title = name or root.name or "project"
     readme = root / "README.md"
@@ -986,7 +1065,6 @@ def init_kernel(
     routes: list[tuple[str, str]] = []
     if (root / "README.md").is_file():
         routes.append(("What this is", "README.md"))
-    routes.append(("How to operate", "AGENTS.md"))
     if (root / "docs" / "now.md").is_file():
         routes.append(("What we are doing now", "docs/now.md"))
     if (root / "docs" / "identity.md").is_file():
@@ -1015,6 +1093,9 @@ def init_kernel(
                 "That file is the source of truth for commands, conventions, authority, and routing.\n"
             ),
         }
+        if (root / ".claude" / "CLAUDE.md").exists() and not (root / "CLAUDE.md").exists():
+            del pointers[root / "CLAUDE.md"]
+            result.warnings.append("init skipped CLAUDE.md: .claude/CLAUDE.md exists; import @AGENTS.md there")
         for path, text in pointers.items():
             rel = path.relative_to(root).as_posix()
             if path.exists() and not force:

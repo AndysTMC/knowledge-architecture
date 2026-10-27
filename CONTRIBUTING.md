@@ -42,7 +42,7 @@ For `--promotion-diff`, supply a full-context unified diff (`git diff --unified=
 
 ## Release checklist
 
-1. Run the full tests on supported Python versions (3.10 and 3.12 in CI), strict tree lint, and a clean temporary Tier 1 init using the actual distributed script path.
+1. Run the full tests on supported Python versions (3.10, 3.12, and 3.14 in CI), strict tree lint, and a clean temporary Tier 1 init using the actual distributed script path.
 2. Review the adoption prompt, kernel, and linter together; the chosen immutable ref must contain a compatible set. Historical links and older tags may legitimately remain in history.
 3. Replace the development version with the intended release version in the script, kernel, specification, README, and changelog. Set `PIN_URL` to that release only when preparing its publication; do not claim the URL is live before publishing it.
 4. Review the diff and proposed decisions with a named human. Publish a new tag only after the release is authorized. Never move an existing tag.

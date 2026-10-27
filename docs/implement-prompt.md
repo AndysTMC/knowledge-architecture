@@ -18,7 +18,7 @@ Resolve `docs/kernel.md`, `docs/implement-prompt.md`, `docs/knowledge-architectu
 
 If those fetches fail, follow this prompt alone.
 
-Prefer **pinned** URLs (`.../v0.1.0/docs/...` on `raw.githubusercontent.com`) when the human asked for a vendor/offline copy. Do not fetch from `main` if they pinned a tag.
+Prefer **pinned** URLs (`.../<tag>/docs/...` on `raw.githubusercontent.com`, for example `v0.1.2`) when the human asked for a vendor/offline copy. Do not fetch from `main` if they pinned a tag.
 
 ## Fast path (greenfield Tier 1 only)
 
@@ -142,7 +142,7 @@ For each existing doc, assign one role or mark it as leftover. You will either k
 
 **Tier 1 (about 10 minutes):** `README.md` + `AGENTS.md` + the three pointer files if this is a software/agent repo. No `docs/` folder. Stop here unless a ring is earned.
 
-**Tier 2:** + `docs/now.md` and, if they asked, the linter in CI.
+**Tier 2:** + `docs/now.md` and, if they asked, the linter in CI (the specification’s §8 has a minimal adopter workflow).
 
 **Tier 3:** + `docs/decisions/` the day the first real decision exists.
 
@@ -162,11 +162,12 @@ Target well under 200 lines. Real commands only. No `___` placeholders. No copy 
 
 Required sections:
 
-1. Commands — install, dev, test one file, test full, lint/format, build if it exists.
+1. Commands — install, dev, test one file, test full, lint/format, build if it exists, and `python3 scripts/lint_knowledge.py --strict` if the linter is vendored.
 2. Hard rules — minimal diffs; no new dependencies / generated-code edits / migrations without an ask; never commit secrets, credentials, or `.env` values; write `PLAN.md` before touching more than two files; run the targeted test before declaring done.
 3. Authority — the table above, with paths that exist in **this** repo after your pass.
-4. Where to read — a routing table. **Only rows whose targets exist** (or that you created in this pass). Delete rows for rings you deferred.
-5. After you finish — propose `docs/now.md` patches, decision drafts, and history lines. Do not silently edit constitutional files.
+4. Write permissions — who may write, propose, or only review each kind (`PLAN.md`, proposed vs accepted decisions, `docs/now.md`, this file), including the `human-accepted`, `human-edited`, and `human-removed` labels if the repo uses pull requests.
+5. Where to read — a routing table. **Only rows whose targets exist** (or that you created in this pass). Delete rows for rings you deferred.
+6. After you finish — propose `docs/now.md` patches, decision drafts, and history lines. Do not silently edit constitutional files.
 
 If `AGENTS.md` already exists and is good, keep its local facts. Reshape it into this structure. Do not throw away stack-specific rules that are still true.
 
@@ -174,13 +175,13 @@ If `AGENTS.md` already exists and is good, keep its local facts. Reshape it into
 
 Pointers only. No facts. If an existing native file has unique still-true rules, move shared rules into `AGENTS.md` and keep only tool-specific mechanics below the pointer.
 
-`CLAUDE.md` (Claude Code does not read `AGENTS.md` natively):
+`CLAUDE.md` (current Claude Code reads `AGENTS.md` only when no `CLAUDE.md` or `CLAUDE.local.md` exists, and older versions never do; the import covers every case without loading the hub twice):
 
 ```markdown
 @AGENTS.md
 ```
 
-Then only existing Claude-specific mechanics (hooks, subagents). Do not invent them. If both `CLAUDE.md` and `.claude/CLAUDE.md` already exist, keep one pointer — prefer the path already in use.
+Then only existing Claude-specific mechanics (hooks, subagents). Do not invent them. If both `CLAUDE.md` and `.claude/CLAUDE.md` already exist, keep one pointer — prefer the path already in use. An existing `CLAUDE.md` symlink to `AGENTS.md` already satisfies this; keep it unless the team works on Windows.
 
 `GEMINI.md` (Gemini CLI still defaults to this name):
 

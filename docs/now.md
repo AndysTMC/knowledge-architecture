@@ -1,26 +1,21 @@
 ---
 type: now
-updated: 2026-09-09
-horizon: 2026-09-09 → 2026-09-23
+updated: 2026-10-27
+horizon: 2026-10-27 → 2026-11-10
 ---
 
 # Now
 
 ## Focus
 
-The v0.1.2 repair and release work is complete. Main uses the released linter version and pin; no new development cycle is open.
-
-## Completed
-
-- Published v0.1.2 through PR #2 and verified the downloaded artifacts against the immutable tag.
-- Passed all 82 tests, strict lint, and Python 3.10/3.12 CI.
-- Enabled required CI checks and code-owner review on main; administrators retain bypass permission.
-- Recorded AndysTMC's explicit acceptance of ADR 0003 and corrected the portfolio in PR #4.
-- Closed issue #1 after verifying the released templates and reproducing the missing-type failure in control fixtures.
+Review and merge the 0.1.3 development work: decision-gate hardening, fewer false lint findings, init improvements, and the refreshed §18 loader table. v0.1.2 remains the latest published release and pin.
 
 ## Next
 
-No queued implementation tasks. Routine maintenance remains: review the dated §18 tool survey before 2026-11-17 and assess adopter feedback when available.
+- AndysTMC reviews the hardening PR and decides on proposed decision 0004 (keep the `CLAUDE.md` import pointer).
+- After merge, add the new `lint (3.14)` check to the required checks on main.
+- Decide whether to publish the work as v0.1.3 (or v0.2.0, since §18 asks for a minor version after a loader re-check). Publishing needs explicit authorization; then follow the CONTRIBUTING release checklist.
+- §18 rows outside the compatibility pack still carry the 2026-08-17 survey; re-check them before 2027-01-25.
 
 ## Validation boundary
 
@@ -28,7 +23,7 @@ The adopter field trial started 2026-08-17. A completed-month evaluation has not
 
 ## Do not do
 
-- Move published tags or promote future decisions without explicit human acceptance.
-- Open an empty development cycle or create unused documentation directories.
+- Move published tags, change `PIN_URL` before a release is published, or promote decisions without explicit human acceptance.
+- Create unused documentation directories.
 
 GitHub protection is managed in repository settings. Verify it through the API before relying on it; checked-in CODEOWNERS alone does not enforce approval.

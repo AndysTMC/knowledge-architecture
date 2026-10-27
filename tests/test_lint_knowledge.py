@@ -1164,5 +1164,154 @@ class ArtifactContractTests(unittest.TestCase):
         self.assertEqual([e.kind for e in lk.gate_events_in_diff(diff)], ["edit"])
 
 
+class GateHardeningTests(unittest.TestCase):
+    PROPOSED = "---\ntype: decision\n---\n# 0001. Choice\n\nStatus: proposed\n\n## Assumptions\n- A\n"
+    ACCEPTED = PROPOSED.replace("Status: proposed", "Status: accepted")
+
+    def repo(self, tmp: str, prefix: str = "") -> Path:
+        root = Path(tmp)
+        for args in (("init", "-q", "-b", "main"), ("config", "user.name", "Test"),
+                     ("config", "user.email", "test@example.invalid")):
+            self.git(root, *args)
+        write_tree(root, {f"{prefix}docs/decisions/0001-x.md": self.PROPOSED, "README.md": "# R\n"})
+        self.git(root, "add", ".")
+        self.git(root, "commit", "-qm", "initial")
+        return root
+
+    def git(self, root: Path, *args: str) -> str:
+        proc = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return proc.stdout
+
+    def kinds(self, root: Path) -> list[str]:
+        return [e.kind for e in lk.gate_events_in_diff(lk.git_decision_diff(root, "main"))]
+
+    def test_user_diff_config_cannot_hide_a_promotion(self):
+        # color.diff=always used to make the gate pass silently; noprefix configs made it crash.
+        for key, value in (("color.diff", "always"), ("color.ui", "always"), ("diff.noprefix", "true"),
+                           ("diff.mnemonicPrefix", "true"), ("diff.suppressBlankEmpty", "true")):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as tmp:
+                root = self.repo(tmp)
+                self.git(root, "config", key, value)
+                (root / "docs/decisions/0001-x.md").write_text(self.ACCEPTED)
+                self.assertEqual(self.kinds(root), ["promotion"])
+
+    def test_package_root_gates_its_own_ring(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.repo(tmp, prefix="packages/api/")
+            package = root / "packages/api"
+            (package / "docs/decisions/0001-x.md").write_text(self.ACCEPTED)
+            self.assertEqual(self.kinds(package), ["promotion"])
+            proc = subprocess.run([sys.executable, str(SCRIPT), "--root", str(package), "--promotion-base", "main"],
+                                  capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+
+    def test_move_out_of_ring_is_a_deletion_and_other_paths_are_not_diffed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.repo(tmp)
+            (root / "docs/decisions/0001-x.md").write_text(self.ACCEPTED)
+            self.git(root, "commit", "-qam", "accept")
+            (root / "archive").mkdir()
+            self.git(root, "mv", "docs/decisions/0001-x.md", "archive/0001-x.md")
+            (root / "README.md").write_text("Status: accepted\n")
+            diff = lk.git_decision_diff(root, "main")
+            self.assertNotIn("README.md", diff)
+            self.assertEqual([e.kind for e in lk.gate_events_in_diff(diff)], ["deletion"])
+
+    def test_colored_supplied_diff_fails_closed(self):
+        diff = "\x1b[1mdiff --git a/adr/0001-x.md b/adr/0001-x.md\x1b[m\n\x1b[32m+Status: accepted\x1b[m\n"
+        with self.assertRaises(ValueError):
+            lk.gate_events_in_diff(diff)
+
+
+class FalseFindingTests(unittest.TestCase):
+    def test_bom_does_not_hide_frontmatter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {"docs/now.md": "﻿---\ntype: now\nupdated: 2026-01-01\n---\n# Now\n"})
+            self.assertEqual(lk.lint(root, stale_days=36500).errors, [])
+
+    @unittest.skipIf(sys.platform == "win32", "symlinks need privileges on Windows")
+    def test_symlinked_pointer_to_hub_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {"AGENTS.md": "# Protocol\n" + "- rule\n" * 30, "OTHER.md": "x\n" * 30})
+            (root / "CLAUDE.md").symlink_to("AGENTS.md")
+            self.assertEqual(lk.lint(root).errors, [])
+            (root / "CLAUDE.md").unlink()
+            (root / "CLAUDE.md").symlink_to("OTHER.md")
+            self.assertTrue(any("pointer" in e for e in lk.lint(root).errors))
+
+    def test_heading_forms_and_commented_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                "README.md": "---\ntype: map\n---\nSetext\n======\n\nSub title\n---\n\n   ## Indented\n\n"
+                             "## [Linked](other.md) words\n\n<!-- [old](missing.md) -->\n"
+                             "[a](#setext) [b](#sub-title) [c](#indented) [d](#linked-words)\n",
+                "other.md": "# Other\n",
+            })
+            self.assertEqual(lk.lint(root).errors, [])
+            self.assertNotIn("type-map", lk.heading_slugs((root / "README.md").read_text()))
+            self.assertNotIn("item", lk.heading_slugs("- item\n---\n"))
+            with (root / "README.md").open("a") as handle:
+                handle.write("[e](#imaginary)\n")
+            self.assertTrue(any("missing anchor" in e for e in lk.lint(root).errors))
+
+    def test_missing_root_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            proc = subprocess.run([sys.executable, str(SCRIPT), "--root", str(Path(tmp) / "absent"), "--format", "json"],
+                                  capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 1, proc.stdout)
+            self.assertIn("not a directory", json.loads(proc.stdout)["errors"][0])
+
+    def test_git_ignored_directories_are_pruned_but_ignored_anti_files_are_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {
+                ".gitignore": "vendor/\nNOTES.md\n", "README.md": "# R\n",
+                "vendor/pkg/README.md": "[x](missing.md)\n", "vendor/pkg/FILES.md": "",
+            })
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            self.assertEqual(lk.lint(root).errors, [])
+            (root / "NOTES.md").write_text("local\n")
+            self.assertTrue(any("anti-file present: NOTES.md" in e for e in lk.lint(root).errors))
+
+
+class InitHardeningTests(unittest.TestCase):
+    def test_agents_lists_knowledge_lint_and_no_self_route(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = lk.init_kernel(Path(tmp), test="pytest")
+            agents = (Path(tmp) / "AGENTS.md").read_text()
+            self.assertIn("- Knowledge lint: `python3 scripts/lint_knowledge.py --strict`", agents)
+            self.assertNotIn("| AGENTS.md |", agents)
+            self.assertEqual(result.warnings, [])
+
+    def test_existing_dot_claude_pointer_is_respected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = write_tree(Path(tmp), {".claude/CLAUDE.md": "@../AGENTS.md\n"})
+            result = lk.init_kernel(root, test="true")
+            self.assertFalse((root / "CLAUDE.md").exists())
+            self.assertTrue(any(".claude/CLAUDE.md" in w for w in result.warnings))
+            self.assertEqual(lk.lint(root, strict=True).errors, [])
+
+    def test_missing_test_command_warns(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = lk.init_kernel(Path(tmp), install="make deps")
+            self.assertTrue(result.ok)
+            self.assertTrue(any("no test command" in w for w in result.warnings))
+
+    def test_package_manager_and_python_runner_inference(self):
+        for files, expected in (
+            ({"package.json": '{"packageManager":"pnpm@9.1.0","scripts":{"test":"x"}}'},
+             {"install": "pnpm install", "test": "pnpm test"}),
+            ({"package.json": '{"scripts":{"test":"x","dev":"y"}}', "bun.lock": ""},
+             {"install": "bun install", "test": "bun run test", "dev": "bun run dev"}),
+            ({"package.json": "not json"}, {"install": "npm install"}),
+            ({"pyproject.toml": "[tool.pytest.ini_options]\n", "uv.lock": ""},
+             {"install": "uv sync", "test": "uv run pytest"}),
+            ({"pyproject.toml": "", "poetry.lock": ""},
+             {"install": "poetry install", "test": "poetry run python3 -m unittest"}),
+        ):
+            with self.subTest(files=files), tempfile.TemporaryDirectory() as tmp:
+                self.assertEqual(lk.infer_commands(write_tree(Path(tmp), files)), expected)
+
+
 if __name__ == "__main__":
     unittest.main()

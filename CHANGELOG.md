@@ -2,6 +2,18 @@
 
 All notable changes to this specification are recorded here. Spec versions are git tags.
 
+## Unreleased — 0.1.3.dev0
+
+The published linter pin remains v0.1.2.
+
+- Decision gate: `--promotion-base` no longer passes silently when Git config sets `color.diff`/`color.ui` to `always`, and no longer crashes under `diff.noprefix` or `diff.mnemonicPrefix`. It diffs only decision directories, with paths relative to `--root`, so a package root now gates its own ring. A supplied diff with terminal color codes is rejected.
+- **New failures adopters may see:** a package-level `--promotion-base` run now reports promotions, edits, and deletions it previously missed; a colored `--promotion-diff` input is an error; a lint `--root` that is not a directory is an error instead of an empty pass.
+- Fewer false findings: a UTF-8 BOM no longer hides frontmatter; a `CLAUDE.md` (or other pointer) symlinked to `AGENTS.md` passes; setext, indented, and linked headings produce their GitHub anchors; links inside HTML comments are ignored; directories Git ignores are pruned (ignored anti-files are still reported).
+- `--init`: `AGENTS.md` lists the knowledge lint command and drops its self-referential routing row; init skips `CLAUDE.md` when `.claude/CLAUDE.md` exists instead of creating a lint error; it warns when no test command is known; command hints cover `packageManager`, Bun, uv, and Poetry.
+- Spec §18, §1, §6.1, S5, and the implement prompt: Claude Code reads `AGENTS.md` natively since v2.1.277 when no `CLAUDE.md` or `CLAUDE.local.md` exists. The pack keeps the `@AGENTS.md` import (proposed decision 0004). Copilot rows refreshed. Tool table review-by moves to 2027-01-25.
+- Spec fixes: §19.3 no longer tells readers to set an invalid `revisit` status; the §15 `AGENTS.md` template gains the knowledge lint command and the `human-edited` rule, and its stray instruction moved outside the template; §14 names every anti-file the linter rejects; §8 adds a minimal adopter CI workflow; the implement prompt no longer uses a `v0.1.0` pin example and lists the write-permissions section.
+- CI tests Python 3.14 alongside 3.10 and 3.12.
+
 ## 0.1.2 — 2026-09-08
 
 - Fix downloaded-script root selection; preserve README under init `--force`; refuse unsafe init paths.

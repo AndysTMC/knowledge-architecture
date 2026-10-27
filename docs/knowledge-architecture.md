@@ -1,8 +1,8 @@
 # A Knowledge Architecture for Humans and Agents
 
-**Version:** 0.1.2
-**Updated:** 2026-09-08
-**Tool table review-by:** 2026-11-17 (§18 ages; treat it as stale after that date until revised)
+**Version:** 0.1.3.dev0 (unreleased)
+**Updated:** 2026-10-27
+**Tool table review-by:** 2027-01-25 (§18 ages; treat it as stale after that date until revised)
 
 Start with [docs/kernel.md](kernel.md) if you have not read this before. This file is the full ring.
 
@@ -98,7 +98,7 @@ A future-proof architecture keeps the three systems distinct, then lets a projec
 **From the 2026 tool reality**
 
 - `AGENTS.md` is the portable standard (60k+ repos; nested files; nearest wins) ([S3](#20-sources)).
-- Claude Code still reads `CLAUDE.md`, not `AGENTS.md`. Official pattern: first line `@AGENTS.md`, or a symlink. On Windows, use the import ([S5](#20-sources)).
+- Claude Code reads `AGENTS.md` natively since v2.1.277, but only when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` is on the path; older versions and some sessions read `CLAUDE.md` only. A `CLAUDE.md` whose first line is `@AGENTS.md` works in every case and never loads the hub twice. A symlink also works; on Windows, use the import ([S5](#20-sources)).
 - Claude Code auto-memory is **machine-local** and is not the team knowledge base. Do not confuse `MEMORY.md` under the local Claude project directory with the repo ([S6](#20-sources)).
 - Skills load on demand. Path-scoped rules load when matching files are touched. Both exist so the root protocol can stay small.
 - Repository overviews and README clones in `AGENTS.md` do not help task success and raise cost. Keep the hub to commands, don’ts, and landmines an agent cannot discover by reading the tree. Route; do not copy ([S4](#20-sources)).
@@ -312,7 +312,7 @@ Do not create legacy `.cursorrules`, `.windsurfrules`, or `.clinerules` if `AGEN
 
 **`AGENTS.md`** — The protocol. Target well under 200 lines (Claude’s own guidance is the same). Contains: install/dev/test/lint commands; hard don’ts; a routing table; authority rules; write permissions. Does **not** contain architecture essays, schema fields, or a copy of the README.
 
-**`CLAUDE.md`** — First line `@AGENTS.md`. Then only Claude-specific mechanics (hooks, subagents, plan-mode policy). Never a second copy of the facts. Required in the compatibility pack because Claude Code does not read `AGENTS.md` natively.
+**`CLAUDE.md`** — First line `@AGENTS.md`. Then only Claude-specific mechanics (hooks, subagents, plan-mode policy). Never a second copy of the facts. Kept in the compatibility pack although current Claude Code can read `AGENTS.md` itself: the import works on every version and session, still applies when anyone adds a `CLAUDE.local.md` (which switches native `AGENTS.md` reading off), and is never loaded twice ([decision 0004](decisions/0004-keep-claude-import-pointer.md)). A symlink to `AGENTS.md` is an acceptable alternative on Unix-only teams.
 
 **`GEMINI.md`** — First line `@AGENTS.md`, plus one sentence that `AGENTS.md` is the source of truth. Gemini CLI’s default filename is still `GEMINI.md`; the pointer makes a teammate’s default install work without editing `settings.json`.
 
@@ -370,9 +370,9 @@ Do not substitute kind names such as `evidence`, `attention`, or `history` for t
 
 The linter enforces types at these conventional paths, and checks declared types elsewhere. Each supported decision directory has its own numbering and index. For a package's nested layout, run `--root` against that package. Arbitrary relocated roles and root routing tables remain human review.
 
-Scans include untracked files and prune dependency/build directories. A `.knowledge-fixtures` marker excludes its directory subtree; it is an explicit test-fixture convention, not an access-control boundary. Unmarked `tests/` documentation is checked. Anti-files remain forbidden even when local and untracked.
+Scans include untracked files and prune dependency/build directories, plus any directory Git ignores when the root is inside a work tree. A `.knowledge-fixtures` marker excludes its directory subtree; it is an explicit test-fixture convention, not an access-control boundary. Unmarked `tests/` documentation is checked. Anti-files remain forbidden even when local, untracked, or individually ignored.
 
-Markdown checks cover inline links, images, reference links, and heading anchors outside fenced/inline code. Leading `/` is interpreted relative to the lint root; links escaping it are rejected. This is a documented local convention and a bounded parser, not a full rendering engine. A non-empty source pointer proves only that provenance is declared; local targets are checked, external availability and evidential quality require review.
+Markdown checks cover inline links, images, reference links, and heading anchors (ATX and setext) outside fenced/inline code and HTML comments. A UTF-8 byte-order mark does not hide frontmatter. Leading `/` is interpreted relative to the lint root; links escaping it are rejected. This is a documented local convention and a bounded parser, not a full rendering engine. A non-empty source pointer proves only that provenance is declared; local targets are checked, external availability and evidential quality require review.
 
 `--strict` continues to include freshness checks. Review attention content before using `--touch-now` (the compatible `--fix` alias); stamping a date does not establish freshness. Invalid dates and conflicting decision statuses are errors.
 
@@ -443,9 +443,52 @@ A proposal is not a work package. A work package is committed execution. If you 
 
 Run `python3 scripts/lint_knowledge.py --strict` (or the copy `--init` wrote). Tests: `python3 -m unittest tests.test_lint_knowledge`. `--version` prints the embedded version; a vendored copy should match the version you intentionally selected; that string is not a checksum. The `pin` in version JSON restores the last published artifact; it does not discover upgrades. Choose a new published tag explicitly when upgrading. There is no auto-update.
 
-The script fails on anti-files, empty rings, duplicate decision IDs, accepted ADRs without Assumptions, one-way supersede links, `_index.md` rows that disagree with a file on status / date / supersedes, missing `type:` on conventional paths, wiki pages without a source pointer, fat pointers, dual `CLAUDE.md`, broken relative links and missing `#anchors`, and — under `--strict` — a stale `docs/now.md`. `--init` writes Tier 1 only.
+The script fails on anti-files, empty rings, duplicate decision IDs, accepted ADRs without Assumptions, one-way supersede links, `_index.md` rows that disagree with a file on status / date / supersedes, missing `type:` on conventional paths, wiki pages without a source pointer, fat pointers (a symlink to `AGENTS.md` is a valid pointer), dual `CLAUDE.md`, broken relative links and missing `#anchors`, and — under `--strict` — a stale `docs/now.md`. `--init` writes Tier 1 only, and its `AGENTS.md` lists the knowledge lint command so agents run it.
 
-**Promotion hook (CI, not the tree linter).** `python3 scripts/lint_knowledge.py --promotion-base <sha>` fails if the diff lands a decision at `Status: accepted` (a flip, or a new file), **or** if it deletes / moves out of the ring a decision whose last seen status is `accepted` or `superseded` (or whose status is not in the hunk — treated as protected). The match is case-insensitive and allows space before the colon. Edits to accepted/superseded records, including demotions and supersession metadata, also require `human-edited` / `--allow-edit`. A diff with no visible old status is conservatively protected. The Git mode uses full context and compares the merge base of the supplied revision and HEAD to the worktree, including staged/unstaged edits. On GitHub: `human-accepted` + `--allow-promotion` for a promotion; `human-removed` + `--allow-deletion` for a removal. No label substitutes for another. The labels are human claims, not proof of thought. The job runs only on `pull_request`; a direct push to `main` is not this hook, and is not branch protection. Kind-mixing inside a typed file, and a belief flip with no `docs/log.md` line, stay human review. Do not claim the script reads those.
+**Promotion hook (CI, not the tree linter).** `python3 scripts/lint_knowledge.py --promotion-base <sha>` fails if the diff lands a decision at `Status: accepted` (a flip, or a new file), **or** if it deletes / moves out of the ring a decision whose last seen status is `accepted` or `superseded` (or whose status is not in the hunk — treated as protected). The match is case-insensitive and allows space before the colon. Edits to accepted/superseded records, including demotions and supersession metadata, also require `human-edited` / `--allow-edit`. A diff with no visible old status is conservatively protected. The Git mode uses full context and compares the merge base of the supplied revision and HEAD to the worktree, including staged/unstaged edits. On GitHub: `human-accepted` + `--allow-promotion` for a promotion; `human-removed` + `--allow-deletion` for a removal. No label substitutes for another. The labels are human claims, not proof of thought. The job runs only on `pull_request`; a direct push to `main` is not this hook, and is not branch protection. Kind-mixing inside a typed file, and a belief flip with no `docs/log.md` line, stay human review. Do not claim the script reads those. The Git mode diffs only decision directories, reports paths relative to `--root` (so a package root gates its own ring), and pins its diff format against local Git settings such as `color.diff` and `diff.noprefix`; a supplied diff with terminal color codes is rejected rather than read as empty.
+
+**Adopter CI (only when the human asked for CI).** A minimal GitHub Actions job for a target repository. It runs the gate with the base branch's copy of the script when one exists, so a pull request cannot weaken its own check, and falls back to the proposed copy on the adoption PR. Create the three labels and restrict who may apply them; branch protection must require this job.
+
+```yaml
+name: knowledge
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+permissions:
+  contents: read
+jobs:
+  knowledge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 scripts/lint_knowledge.py --strict
+      - name: Decision gate
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          ALLOW_PROMO: ${{ contains(github.event.pull_request.labels.*.name, 'human-accepted') }}
+          ALLOW_EDIT: ${{ contains(github.event.pull_request.labels.*.name, 'human-edited') }}
+          ALLOW_DEL: ${{ contains(github.event.pull_request.labels.*.name, 'human-removed') }}
+        run: |
+          checker=scripts/lint_knowledge.py
+          if git show "$BASE:scripts/lint_knowledge.py" > "$RUNNER_TEMP/gate.py" 2>/dev/null; then
+            checker="$RUNNER_TEMP/gate.py"
+          fi
+          flags=()
+          if [ "$ALLOW_PROMO" = "true" ]; then flags+=(--allow-promotion); fi
+          if [ "$ALLOW_DEL" = "true" ]; then flags+=(--allow-deletion); fi
+          checker_help=$(python3 "$checker" --help)
+          if [ "$ALLOW_EDIT" = "true" ] && [[ "$checker_help" == *"--allow-edit"* ]]; then
+            flags+=(--allow-edit)
+          fi
+          python3 "$checker" --root "$GITHUB_WORKSPACE" --promotion-base "$BASE" "${flags[@]}"
+```
+
+`--strict` includes the attention clock, so a stale `docs/now.md` blocks merges until someone reviews it; that is the point of the clock. For a package with its own rings, point `--root` at that package in both commands and read the base copy from that package's `scripts/` path.
 
 When you add more CI of your own: fail if `docs/schema.md` names a field the generated schema does not have.
 
@@ -605,6 +648,8 @@ Once accepted: clarify wording under human review if you must. Do not invert the
 | A `CHANGELOG.md` hand-duplicated from git *and* `LOG.md` | Generate user-facing notes |
 | Compiling wiki pages back into `raw/` | Self-citation. The wiki dies. |
 
+The linter rejects these exact names anywhere in the scanned tree: `FILES.md`, `hot-cache.md`, `MAP.md`, `AI_CONTEXT.md`, `NOTES.md`, `ACTIVE_TASK.md`, `SCRATCHPAD.md`, and `TODO.md` together with `BACKLOG.md`. `MAP.md` is a second router (§3); `ACTIVE_TASK.md` and `SCRATCHPAD.md` are working memories that belong in `PLAN.md` (§5.4). The rest of this table is human review.
+
 `LICENSE`, `CITATION.cff`, `SECURITY.md`, `CODE_OF_CONDUCT.md` stay at root when the world expects them. They are interfaces, not organs.
 
 ---
@@ -622,6 +667,7 @@ Once accepted: clarify wording under human review if you must. Do not invert the
 - Test (one file): `___`
 - Test (full): `___`
 - Lint / format: `___`
+- Knowledge lint: `python3 scripts/lint_knowledge.py --strict`
 
 ## Hard rules
 - Do not add a dependency, edit generated code, or change a migration without an explicit ask.
@@ -629,8 +675,6 @@ Once accepted: clarify wording under human review if you must. Do not invert the
 - Minimal diffs. Touch only what the task requires.
 - For work that will edit more than two files, write `PLAN.md` first.
 - Run the targeted test before calling the task done.
-
-Delete any "Where to read" row whose target does not exist yet.
 
 ## Authority
 - Level 0 (not facts): `docs/capture/`, `PLAN.md`, chat
@@ -643,7 +687,8 @@ Delete any "Where to read" row whose target does not exist yet.
 - Proposed decisions: create; leave `proposed`.
 - Accepted decisions, architecture, `docs/now.md`: propose a patch.
 - `Status: proposed` → `accepted`: a named human only (PR label `human-accepted`).
-- Do not delete an accepted or superseded decision (PR label `human-removed`).
+- Edits to accepted or superseded decisions: human review (PR label `human-edited`).
+- Do not delete an accepted or superseded decision; supersede it (PR label `human-removed`).
 
 ## Where to read
 | Need | File |
@@ -659,6 +704,8 @@ Delete any "Where to read" row whose target does not exist yet.
 ## After you finish
 Propose, do not silently apply: a docs/now.md patch, a decision draft if you chose something, a one-line history note if git will not explain it.
 ```
+
+Fill every `___` with a real command or delete the line. Delete any "Where to read" row whose target does not exist yet, and the knowledge lint line if the script is not vendored. `--init` writes this shape with only live rows.
 
 ### `CLAUDE.md`
 
@@ -755,12 +802,12 @@ The architecture is portable because **facts live in one file** (`AGENTS.md`) an
 |---|---|---|---|
 | OpenAI Codex CLI | Yes (primary) | — | Nested `AGENTS.md`; nearest wins |
 | Cursor | Yes | `.cursor/rules/*.mdc` only for glob-scoped extras | Do not create legacy `.cursorrules` |
-| GitHub Copilot (VS Code agent / coding agent) | Yes | — | Nearest `AGENTS.md` wins |
-| GitHub Copilot (some IDEs, some review surfaces) | Unreliable | `.github/copilot-instructions.md` pointer | Compatibility pack |
+| GitHub Copilot (VS Code agent, coding agent, code review) | Yes | — | Nearest `AGENTS.md` wins; code review reads the PR head branch |
+| GitHub Copilot (Chat in some IDEs and on github.com) | Not guaranteed | `.github/copilot-instructions.md` pointer | Compatibility pack |
 | Gemini CLI / Gemini Code Assist | Configurable; default is still `GEMINI.md` | `GEMINI.md` pointer | Do not list both `AGENTS.md` and `GEMINI.md` in `context.fileName` if the latter imports the hub |
 | Google Jules | Yes | — | |
 | Google Antigravity | Yes (`AGENTS.md` and `GEMINI.md`) | Covered by pack | |
-| Claude Code | **No** | `CLAUDE.md` with `@AGENTS.md` | Official pattern. Symlink works on Unix; import works on Windows |
+| Claude Code | Since v2.1.277, and only when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` is on the path | `CLAUDE.md` with `@AGENTS.md` | The import works on every version and is never loaded twice ([decision 0004](decisions/0004-keep-claude-import-pointer.md)). Symlink works on Unix; import works on Windows |
 | Windsurf / Cascade / Devin Desktop | Yes | `.windsurf/rules/` or `.devin/rules/` only for scoped extras | Do not create legacy `.windsurfrules` |
 | Cline / Kilo Code | Yes (also `.clinerules/`) | — | |
 | Amp, Factory, OpenCode, goose | Yes | — | |
@@ -770,6 +817,8 @@ The architecture is portable because **facts live in one file** (`AGENTS.md`) an
 | Continue | Rules in `.continue/rules/` | Thin rule pointing at `AGENTS.md` if Continue is used | |
 | Kiro | Yes | `.kiro/steering/` only for Kiro-specific extras | |
 | Grok / Grok Build | Yes | — | |
+
+Re-checked 2026-10-27 against vendor documentation for the compatibility-pack tools (Claude Code, Gemini CLI, GitHub Copilot) and against the agents.md supporter list; other rows carry the 2026-08-17 survey.
 
 Skills stay on-demand. Default home is `docs/skills/`. Do not copy every skill into `.claude/skills/`, `.agents/skills/`, and Copilot skill folders. If a tool only discovers its own directory, add one pointer or one skill there that names `docs/skills/` — do not fork the recipes.
 
@@ -862,7 +911,7 @@ When two sources cannot both be true of the same claim:
 
 1. Keep both Evidence files. Evidence is immutable; do not “fix” a source to match the belief.
 2. State the conflict on the Belief file: what each source says, what we currently hold, and the confidence.
-3. If a Decision’s assumption is now in doubt, mark that decision `revisit` (or write a superseding draft). Do not invert the old decision in place.
+3. If a Decision’s assumption is now in doubt, write a superseding `proposed` draft, or track the open question in `docs/now.md` or the issue tracker. Do not invert the old decision in place, and do not invent a status: `revisit` is not in the decision vocabulary (§6.1), and changing an accepted record’s status is a protected edit.
 4. One line in `docs/log.md` (this is an event git will not explain).
 
 The Belief is allowed to pick a side. The Evidence layer is not allowed to forget the loser.
@@ -890,7 +939,7 @@ Shipped versions of this spec live on git tags (`v0.1.0`, …). **Published tags
 
 ## 20. Sources
 
-Empirical claims in §1 and §18. Retrieved 2026-08-17. The architecture’s own evidence rule applies here: a claim without a pointer is a vibe.
+Empirical claims in §1 and §18. Retrieved 2026-08-17; S5 re-checked 2026-10-27. The architecture’s own evidence rule applies here: a claim without a pointer is a vibe.
 
 | ID | Claim in this spec | Source |
 |---|---|---|
@@ -898,7 +947,7 @@ Empirical claims in §1 and §18. Retrieved 2026-08-17. The architecture’s own
 | **S2** | `AGENTS.md` donated to the Linux Foundation / Agentic AI Foundation, December 2025 | [Linux Foundation press release, 2025-12-09](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation); [OpenAI, same day](https://openai.com/index/agentic-ai-foundation/); steward home [aaif.io](https://aaif.io/). |
 | **S3** | `AGENTS.md` used in 60k+ repositories; nested files, nearest wins | [agents.md](https://agents.md/) (“used by over 60k open-source projects”; [GitHub code search](https://github.com/search?q=path%3AAGENTS.md+NOT+is%3Afork+NOT+is%3Aarchived&type=code)). Nearest-wins is in the same page’s FAQ. |
 | **S4** | README clones / repository overviews in `AGENTS.md` do not help, and context files raise cost | Gloaguen, Mündler, Müller, Raychev, Vechev, *Evaluating AGENTS.md*, [arXiv:2602.11988](https://arxiv.org/abs/2602.11988) (v2, 2026-06-23): context files do not generally improve task success and increase inference cost by over 20%; “repository overviews, although popular … are not helpful.” The spec does **not** claim a measured drop from any one duplicated paragraph — it claims the failure mode the paper measured. |
-| **S5** | Claude Code reads `CLAUDE.md`, not `AGENTS.md`; official bridge is `@AGENTS.md` (or a symlink; import on Windows) | [Claude Code memory docs](https://code.claude.com/docs/en/memory) (section “AGENTS.md”). |
+| **S5** | Claude Code reads `AGENTS.md` natively from v2.1.277, but only when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` is on the path; older versions and some sessions read `CLAUDE.md` only; an `@AGENTS.md` import is never loaded twice (or a symlink; import on Windows) | [Claude Code memory docs](https://code.claude.com/docs/en/memory) (sections “AGENTS.md”, “When AGENTS.md support is unavailable”, “Remove an earlier AGENTS.md workaround”). |
 | **S6** | Claude auto-memory is machine-local, not the team knowledge base | Same [memory docs](https://code.claude.com/docs/en/memory): auto-memory writes `MEMORY.md` in the local Claude project directory. |
 | **S7** | Keep the always-on protocol file short (~200 lines) | [Claude Code features overview](https://code.claude.com/docs/en/features-overview): “Keep CLAUDE.md under 200 lines.” This spec applies the same budget to `AGENTS.md`, the file that actually loads in portable setups. |
 

@@ -2,9 +2,9 @@
 
 All notable changes to this specification are recorded here. Spec versions are git tags.
 
-## Unreleased — 0.1.3.dev0
+## 0.2.0 — 2026-10-27
 
-The published linter pin remains v0.1.2.
+Minor version per §18 (loader re-check) and because the gate reports failures it previously missed. JSON output and CLI flags are unchanged. Decision 0004 accepted by AndysTMC.
 
 - Decision gate: `--promotion-base` no longer passes silently when Git config sets `color.diff`/`color.ui` to `always`, and no longer crashes under `diff.noprefix` or `diff.mnemonicPrefix`. It diffs only decision directories, with paths relative to `--root`, so a package root now gates its own ring. A supplied diff with terminal color codes is rejected.
 - **New failures adopters may see:** a package-level `--promotion-base` run now reports promotions, edits, and deletions it previously missed; a colored `--promotion-diff` input is an error; a lint `--root` that is not a directory is an error instead of an empty pass.

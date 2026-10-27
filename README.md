@@ -1,6 +1,6 @@
 # Knowledge Architecture
 
-**0.1.3.dev0 (unreleased)** — a typed system for project knowledge that humans and coding agents share. Latest published release: **v0.1.2**. Published tags are immutable.
+**0.2.0** — a typed system for project knowledge that humans and coding agents share. Latest published release: **v0.2.0**. Published tags are immutable.
 
 Start with [docs/kernel.md](docs/kernel.md). The [full specification](docs/knowledge-architecture.md) defines the model; the [implementation prompt](docs/implement-prompt.md) applies it elsewhere.
 
@@ -18,7 +18,7 @@ From the target repository, download the pinned release and supply the real test
 
 ```bash
 curl -fsSL --create-dirs -o scripts/lint_knowledge.py \
-  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.1.2/scripts/lint_knowledge.py
+  https://raw.githubusercontent.com/AndysTMC/knowledge-architecture/v0.2.0/scripts/lint_knowledge.py
 python3 scripts/lint_knowledge.py --root . --init --test "pytest"
 python3 scripts/lint_knowledge.py --strict
 ```
@@ -46,7 +46,7 @@ and stop without writing. Preserve existing role locations and local instruction
 
 After reviewing the report, authorize Phase 2. New decisions remain `proposed`; a named human accepts them.
 
-Use `v0.1.2` for the kernel, implementation prompt, full spec, and linter. Historical `v0.1.0` templates lack some frontmatter required by the `v0.1.1` linter. Do not combine those pins as a working adoption recipe. The `v0.1.2` artifact set includes the template fixes.
+Use `v0.2.0` for the kernel, implementation prompt, full spec, and linter. Do not combine pins from different releases as an adoption recipe: historical `v0.1.0` templates lack frontmatter later linters require. Upgrading from `v0.1.2`: read the 0.2.0 changelog for new gate failures before re-vendoring.
 
 ## Vendored versions
 
@@ -54,7 +54,7 @@ Use `v0.1.2` for the kernel, implementation prompt, full spec, and linter. Histo
 python3 scripts/lint_knowledge.py --version --format json
 ```
 
-`version` identifies this script; `pin` points to the last **published** linter, currently `v0.1.2`. A development version can differ from that artifact. Downloading the installed copy's `pin` restores its published baseline; it does not discover an upgrade.
+`version` identifies this script; `pin` points to the last **published** linter, currently `v0.2.0`. A development version can differ from that artifact. Downloading the installed copy's `pin` restores its published baseline; it does not discover an upgrade.
 
 To upgrade, choose a published release explicitly, inspect its changes, and vendor that release's script. Use the same release's adoption documents. Copies do not auto-update; version strings are not checksums. Published tags are never moved.
 

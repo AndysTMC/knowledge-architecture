@@ -1,6 +1,6 @@
 # A Knowledge Architecture for Humans and Agents
 
-**Version:** 0.1.3.dev0 (unreleased)
+**Version:** 0.2.0
 **Updated:** 2026-10-27
 **Tool table review-by:** 2027-01-25 (§18 ages; treat it as stale after that date until revised)
 
@@ -765,7 +765,7 @@ python3 /absolute/path/to/target/scripts/lint_knowledge.py --version
 python3 /absolute/path/to/target/scripts/lint_knowledge.py --strict
 ```
 
-`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. Use the script and docs from the same checkout/ref. Release `v0.1.2` contains a compatible artifact set. On development branches, `--version` may report a development version while `pin` remains the last published linter URL. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
+`--init` writes `AGENTS.md` (real commands, no README clone), the §18 pointers, and a copy of the script. It does **not** create `docs/`, decisions, or a wiki. Use the script and docs from the same checkout/ref. Release `v0.2.0` contains a compatible artifact set. On development branches, `--version` may report a development version while `pin` remains the last published linter URL. Existing or messy repos still use Phase 1 inspect / Phase 2 apply below — `--init` will not map what you already have.
 
 1. **Inspect first.** Inventory existing docs, agent files, package manifests, CI, issue tracker, and whether the project is software, research, mixed, or something else. Do not invent a parallel tree beside files that already play a role.
 2. **Map, then create.** If `PROJECT.md`, `ARCHITECTURE.md`, `adr/`, `docs/adr/`, `DESIGN.md`, or similar already exist, keep them and treat them as the role they already play. Point `AGENTS.md` at those paths. Do not copy their contents into new files with the default names.
